@@ -14,24 +14,18 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Validate configuration
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    '⚠️ Supabase credentials not configured. Using demo mode.\n' +
-    'Please create .env.local with:\n' +
-    'NEXT_PUBLIC_SUPABASE_URL=your_project_url\n' +
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key'
-  );
-}
-
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  },
-});
+// Create Supabase client only if credentials exist, otherwise use placeholder for build
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  }
+);
 
 // Database types for Supabase
 export interface Database {
