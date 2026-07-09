@@ -23,7 +23,7 @@ interface Program {
   industry: string;
   description: string;
   objectives: string[];
-  target_audience: { [key: string]: string };
+  target_audience: Record<string, string | undefined>;
   budget: number;
   payout_model: string;
   payout_amount: number;

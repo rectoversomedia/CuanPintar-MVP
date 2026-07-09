@@ -415,7 +415,7 @@ export class PaymentService {
   }
 
   // Get bank code from bank name
-  private getBankCode(bankName: string): string {
+  public getBankCode(bankName: string): string {
     const bankCodes: Record<string, string> = {
       'bca': 'BCA',
       'mandiri': 'MANDIRI',
@@ -485,7 +485,7 @@ export function getAvailablePaymentMethods(): Array<{ id: PaymentMethod; name: s
     { id: 'dana', name: 'DANA', icon: '📲' },
     { id: 'linkaja', name: 'LinkAja', icon: '🔗' },
     { id: 'shopeepay', name: 'ShopeePay', icon: '🛒' },
-    { id: 'qris', name: 'QRIS', icon: '📲' },
+    { id: 'qrisp', name: 'QRIS', icon: '📲' },
     { id: 'credit_card', name: 'Credit Card', icon: '💳' },
   ];
 }

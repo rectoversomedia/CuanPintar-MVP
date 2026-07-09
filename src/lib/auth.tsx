@@ -20,7 +20,7 @@ export interface AuthUser {
   avatar?: string;
   phone?: string;
   status?: 'active' | 'pending' | 'suspended';
-  createdAt: string;
+  createdAt?: string;
 }
 
 // Auth context type

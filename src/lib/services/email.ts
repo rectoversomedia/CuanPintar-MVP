@@ -264,11 +264,11 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
 
 // Send email from template
 export async function sendTemplatedEmail(
-  templateType: keyof typeof EMAIL_TEMPLATES,
+  templateKey: string,
   to: string | string[],
   data: Record<string, unknown>
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const template = getTemplate(templateType, data);
+  const template = getTemplate(templateKey as keyof typeof EMAIL_TEMPLATES, data);
   return sendEmail({
     to,
     subject: template.subject,
@@ -278,7 +278,7 @@ export async function sendTemplatedEmail(
 }
 
 // Get template content
-function getTemplate(type: keyof typeof EMAIL_TEMPLATES, data: Record<string, unknown>): EmailTemplate {
+function getTemplate(type: string, data: Record<string, unknown>): EmailTemplate {
   const templates: Record<string, string> = {
     [EMAIL_TEMPLATES.WELCOME]: `
       <h1>Welcome to CuanPintar! 🎉</h1>
@@ -480,11 +480,9 @@ export const emailService = new EmailService();
 
 // Helper functions
 export async function sendWelcomeEmail(to: string, name: string, role: 'advertiser' | 'partner', data: Record<string, unknown>) {
-  const templateType = role === 'advertiser'
-    ? EMAIL_TEMPLATES.WELCOME_ADVERTISER
-    : EMAIL_TEMPLATES.WELCOME_PARTNER;
+  const templateKey = role === 'advertiser' ? EMAIL_TEMPLATES.WELCOME_ADVERTISER : EMAIL_TEMPLATES.WELCOME_PARTNER;
 
-  return sendTemplatedEmail(templateType, to, {
+  return sendTemplatedEmail(templateKey, to, {
     name,
     ...data,
     dashboardUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
