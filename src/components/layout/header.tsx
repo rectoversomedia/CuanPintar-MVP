@@ -17,9 +17,10 @@ import {
 interface HeaderProps {
   title?: string;
   subtitle?: string;
+  action?: React.ReactNode;
 }
 
-export function Header({ title, subtitle }: HeaderProps) {
+export function Header({ title, subtitle, action }: HeaderProps) {
   const [user] = React.useState({
     name: 'Sarah Wijaya',
     email: 'sarah@tunaiku.com',
@@ -35,6 +36,9 @@ export function Header({ title, subtitle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Action slot */}
+        {action && <div className="flex items-center">{action}</div>}
+
         {/* Search */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

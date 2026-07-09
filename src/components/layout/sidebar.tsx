@@ -24,6 +24,9 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
+  UserCheck,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -68,6 +71,10 @@ const adminNav: NavItem[] = [
   { label: 'Conversions', href: '/admin/conversions', icon: <ShoppingCart className="w-5 h-5" /> },
   { label: 'Fraud Review', href: '/admin/fraud', icon: <Shield className="w-5 h-5" /> },
   { label: 'Payouts', href: '/admin/payouts', icon: <CreditCard className="w-5 h-5" /> },
+  { label: 'Support Tickets', href: '/admin/tickets', icon: <MessageSquare className="w-5 h-5" /> },
+  { label: 'KYC Verification', href: '/admin/kyc', icon: <UserCheck className="w-5 h-5" /> },
+  { label: 'Audit Logs', href: '/admin/audit', icon: <History className="w-5 h-5" /> },
+  { label: 'Announcements', href: '/admin/announcements', icon: <Megaphone className="w-5 h-5" /> },
   { label: 'Settings', href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
