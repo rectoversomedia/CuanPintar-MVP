@@ -1,160 +1,144 @@
 /**
- * Partner API Routes
+ * Partner API Routes - Dynamic
  *
  * Endpoints:
- * GET    /api/partners          - List partners
- * POST   /api/partners          - Create partner
- * GET    /api/partners/:id      - Get partner
- * PUT    /api/partners/:id      - Update partner
- * DELETE /api/partners/:id      - Delete partner
+ * GET    /api/partners             - List partners
+ * POST   /api/partners             - Create partner
+ * GET    /api/partners/:id        - Get partner
+ * PUT    /api/partners/:id        - Update partner
+ * DELETE /api/partners/:id        - Delete partner
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-// In-memory storage (replace with Supabase)
-const partners = new Map<string, Partner>();
-
-interface Partner {
-  id: string;
-  partner_name: string;
-  partner_type: string;
-  niche: string;
-  location: string;
-  audience_size: number;
-  quality_score: number;
-  fraud_risk: string;
-  status: string;
-  total_earnings: number;
-  email: string;
-  phone?: string;
-  website?: string;
-  created_at: string;
-}
-
-// Initialize with mock data
-const mockPartners = [
-  {
-    id: 'part_001',
-    partner_name: 'JakselNews Media Network',
-    partner_type: 'media',
-    niche: 'Lifestyle & Urban',
-    location: 'Jakarta Selatan',
-    audience_size: 2500000,
-    quality_score: 92,
-    fraud_risk: 'low',
-    status: 'active',
-    total_earnings: 18500000,
-    email: 'budi@jakselnews.com',
-    website: 'https://jakselnews.com',
-    created_at: '2024-02-20T10:00:00Z',
-  },
-  {
-    id: 'part_002',
-    partner_name: 'Finance Creator Jakarta',
-    partner_type: 'creator',
-    niche: 'Personal Finance',
-    location: 'Jakarta',
-    audience_size: 450000,
-    quality_score: 88,
-    fraud_risk: 'low',
-    status: 'active',
-    total_earnings: 12300000,
-    email: 'creator@finance.id',
-    website: 'https://financecreator.id',
-    created_at: '2024-02-25T11:00:00Z',
-  },
-];
-
-mockPartners.forEach(p => partners.set(p.id, p));
-
-function generateId(): string {
-  return `part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 // GET /api/partners
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const type = searchParams.get('type');
+    const search = searchParams.get('search');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
 
-  const status = searchParams.get('status');
-  const type = searchParams.get('type');
-  const search = searchParams.get('search');
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '20');
+    // Demo mode
+    if (!isSupabaseConfigured()) {
+      const { mockPartners } = await import('@/lib/mock-data');
+      let data = [...mockPartners];
 
-  let result = Array.from(partners.values());
+      if (status) data = data.filter(p => p.status === status);
+      if (type) data = data.filter(p => p.partner_type === type);
+      if (search) data = data.filter(p =>
+        p.partner_name.toLowerCase().includes(search.toLowerCase()) ||
+        p.niche?.toLowerCase().includes(search.toLowerCase()) ||
+        p.location?.toLowerCase().includes(search.toLowerCase())
+      );
 
-  // Filter by status
-  if (status) {
-    result = result.filter(p => p.status === status);
-  }
+      const total = data.length;
+      const start = (page - 1) * limit;
+      const paginatedData = data.slice(start, start + limit);
 
-  // Filter by type
-  if (type) {
-    result = result.filter(p => p.partner_type === type);
-  }
+      return NextResponse.json({
+        success: true,
+        data: paginatedData,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      });
+    }
 
-  // Search by name
-  if (search) {
-    const searchLower = search.toLowerCase();
-    result = result.filter(p =>
-      p.partner_name.toLowerCase().includes(searchLower) ||
-      p.niche.toLowerCase().includes(searchLower) ||
-      p.location.toLowerCase().includes(searchLower)
+    // Production mode
+    let query = supabase
+      .from('partners')
+      .select('*, users!partners_user_id_fkey(name, email, avatar_url)', { count: 'exact' });
+
+    if (status) query = query.eq('status', status);
+    if (type) query = query.eq('partner_type', type);
+    if (search) query = query.or(`partner_name.ilike.%${search}%,niche.ilike.%${search}%,location.ilike.%${search}%`);
+
+    const { data, error, count } = await query
+      .range((page - 1) * limit, page * limit - 1)
+      .order('quality_score', { ascending: false });
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      success: true,
+      data,
+      pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) },
+    });
+  } catch (error) {
+    console.error('List partners error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch partners' },
+      { status: 500 }
     );
   }
-
-  // Pagination
-  const total = result.length;
-  const start = (page - 1) * limit;
-  const paginatedResult = result.slice(start, start + limit);
-
-  return NextResponse.json({
-    success: true,
-    data: paginatedResult,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  });
 }
 
 // POST /api/partners
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { userId, partnerName, partnerType, niche, location, audienceSize } = body;
 
-    const partner: Partner = {
-      id: generateId(),
-      partner_name: body.partner_name,
-      partner_type: body.partner_type,
-      niche: body.niche || '',
-      location: body.location || '',
-      audience_size: body.audience_size || 0,
-      quality_score: 50, // Default score for new partners
-      fraud_risk: 'low',
-      status: 'pending', // New partners start as pending
-      total_earnings: 0,
-      email: body.email,
-      phone: body.phone,
-      website: body.website,
-      created_at: new Date().toISOString(),
-    };
+    if (!partnerName || !partnerType) {
+      return NextResponse.json(
+        { success: false, error: 'Partner name and type are required' },
+        { status: 400 }
+      );
+    }
 
-    partners.set(partner.id, partner);
+    // Demo mode
+    if (!isSupabaseConfigured()) {
+      const newPartner = {
+        id: `part_${Date.now()}`,
+        user_id: userId,
+        partner_name: partnerName,
+        partner_type: partnerType,
+        niche,
+        location,
+        audience_size: audienceSize || 0,
+        quality_score: 50,
+        fraud_risk: 'low',
+        status: 'pending',
+        total_earnings: 0,
+        created_at: new Date().toISOString(),
+      };
+
+      return NextResponse.json({
+        success: true,
+        data: newPartner,
+        message: 'Partner created (demo mode)',
+      }, { status: 201 });
+    }
+
+    // Production mode
+    const { data, error } = await supabase
+      .from('partners')
+      .insert({
+        user_id: userId,
+        partner_name: partnerName,
+        partner_type: partnerType,
+        niche,
+        location,
+        audience_size: audienceSize || 0,
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      data: partner,
+      data,
       message: 'Partner created successfully',
     }, { status: 201 });
-
   } catch (error) {
     console.error('Create partner error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to create partner',
-    }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to create partner' },
+      { status: 500 }
+    );
   }
 }
