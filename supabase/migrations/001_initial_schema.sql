@@ -2,14 +2,22 @@
 -- Migration: 001_initial_schema.sql
 -- Description: Create all core tables for CuanPintar MVP
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Enable UUID extension (PostgreSQL 13+)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Helper function to generate UUID
+CREATE OR REPLACE FUNCTION generate_uuid()
+RETURNS UUID AS $$
+BEGIN
+    RETURN gen_random_uuid();
+END;
+$$ LANGUAGE plpgsql;
 
 -- ============================================
 -- USERS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255),
     name VARCHAR(255) NOT NULL,
@@ -27,7 +35,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- ADVERTISERS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS advertisers (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     company_name VARCHAR(255) NOT NULL,
     industry VARCHAR(100),
@@ -49,7 +57,7 @@ CREATE TABLE IF NOT EXISTS advertisers (
 -- PARTNERS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS partners (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     partner_name VARCHAR(255) NOT NULL,
     partner_type VARCHAR(50) NOT NULL CHECK (partner_type IN ('media', 'creator', 'affiliate', 'sales', 'mission', 'community', 'agency')),
@@ -74,7 +82,7 @@ CREATE TABLE IF NOT EXISTS partners (
 -- PROGRAMS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS programs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     advertiser_id UUID REFERENCES advertisers(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     brand_name VARCHAR(255) NOT NULL,
@@ -102,7 +110,7 @@ CREATE TABLE IF NOT EXISTS programs (
 -- PROGRAM CHANNELS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS program_channels (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     program_id UUID REFERENCES programs(id) ON DELETE CASCADE,
     channel_type VARCHAR(50) NOT NULL CHECK (channel_type IN ('media', 'creator', 'affiliate', 'sales', 'mission', 'community')),
     allocated_budget DECIMAL(15,2) DEFAULT 0,
@@ -121,7 +129,7 @@ CREATE TABLE IF NOT EXISTS program_channels (
 -- CONVERSIONS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS conversions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     program_id UUID REFERENCES programs(id) ON DELETE CASCADE,
     advertiser_id UUID REFERENCES advertisers(id) ON DELETE SET NULL,
     partner_id UUID REFERENCES partners(id) ON DELETE SET NULL,
@@ -155,7 +163,7 @@ CREATE TABLE IF NOT EXISTS conversions (
 -- PAYOUTS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS payouts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     partner_id UUID REFERENCES partners(id) ON DELETE CASCADE,
     amount DECIMAL(15,2) NOT NULL,
     platform_fee DECIMAL(15,2) DEFAULT 0,
@@ -186,7 +194,7 @@ CREATE TABLE IF NOT EXISTS payouts (
 -- PAYMENT METHODS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS payment_methods (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     partner_id UUID REFERENCES partners(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL CHECK (type IN ('bank_transfer', 'gopay', 'ovo', 'dana', 'linkaja', 'shopeepay')),
     bank_name VARCHAR(100),
@@ -205,7 +213,7 @@ CREATE TABLE IF NOT EXISTS payment_methods (
 -- MEDIA PARTNERS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS media_partners (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     partner_id UUID REFERENCES partners(id) ON DELETE CASCADE,
     media_name VARCHAR(255) NOT NULL,
     category VARCHAR(100) CHECK (category IN ('national_news', 'local_news', 'finance', 'lifestyle', 'parenting', 'automotive', 'education', 'tech', 'muslim_family', 'entertainment')),
@@ -226,7 +234,7 @@ CREATE TABLE IF NOT EXISTS media_partners (
 -- WEBHOOKS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS webhooks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     url TEXT NOT NULL,
@@ -247,7 +255,7 @@ CREATE TABLE IF NOT EXISTS webhooks (
 -- WEBHOOK DELIVERIES TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     webhook_id UUID REFERENCES webhooks(id) ON DELETE CASCADE,
     event VARCHAR(100) NOT NULL,
     payload JSONB NOT NULL,
@@ -263,7 +271,7 @@ CREATE TABLE IF NOT EXISTS webhook_deliveries (
 -- NOTIFICATIONS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -280,7 +288,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 -- ACTIVITY LOGS TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS activity_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     action VARCHAR(100) NOT NULL,
     entity_type VARCHAR(50),
