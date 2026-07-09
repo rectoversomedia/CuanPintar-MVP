@@ -34,155 +34,196 @@ Visit http://localhost:3000
 - **Radix UI** - Accessible primitives
 - **Lucide React** - Icons
 - **Recharts** - Charts & visualizations
+- **Supabase** - Database & Auth (optional)
+- **Midtrans/Xendit** - Payments (optional)
 
 ## Project Structure
 
 ```
 src/
-├── app/                    # Next.js App Router
-│   ├── (auth)/login/       # Demo auth (no real auth)
-│   ├── (main)/             # Protected app routes
-│   │   ├── admin/          # Admin portal (8 pages)
-│   │   ├── advertiser/     # Advertiser portal (12 pages)
-│   │   └── partner/        # Partner portal (8 pages)
-│   ├── api/                # API routes (5 endpoints)
-│   ├── for-advertisers/    # Marketing page
-│   ├── for-partners/       # Marketing page
-│   ├── how-it-works/       # Marketing page
-│   ├── programs/           # Marketplace page
+├── app/
+│   ├── (auth)/login/           # Auth routes
+│   ├── (main)/                 # Protected app routes
+│   │   ├── admin/             # Admin portal (8 pages)
+│   │   ├── advertiser/         # Advertiser portal (12 pages)
+│   │   └── partner/           # Partner portal (8 pages)
+│   ├── api/                    # API routes (14 endpoints)
+│   ├── for-advertisers/        # Marketing pages
+│   ├── for-partners/
+│   ├── how-it-works/
+│   ├── programs/
 │   ├── globals.css
 │   ├── layout.tsx
-│   └── page.tsx           # Landing page
+│   └── page.tsx               # Landing page
 ├── components/
-│   ├── ui/                 # 15 reusable components
-│   │   ├── button.tsx, input.tsx, badge.tsx
-│   │   ├── card.tsx, table.tsx, dialog.tsx
-│   │   ├── tabs.tsx, select.tsx, switch.tsx
-│   │   ├── accordion.tsx, avatar.tsx, checkbox.tsx
-│   │   ├── dropdown-menu.tsx, label.tsx, progress.tsx
-│   ├── layout/             # Sidebar, Header
-│   ├── advertiser/         # Dashboard, stats, charts
-│   ├── admin/              # Dashboard, tables
-│   └── partner/           # Dashboard, program cards
+│   ├── ui/                    # 16 reusable components
+│   ├── layout/               # Sidebar, Header
+│   └── tracking/             # Tracking pixel
 ├── lib/
-│   ├── mock-data.ts        # 10 advertisers, 10 partners, 10 programs, conversions
-│   ├── utils.ts            # cn() helper, formatters
-│   └── auth.ts            # Demo auth context
-└── types/
-    └── index.ts            # 30+ TypeScript interfaces
+│   ├── supabase.ts           # Supabase client
+│   ├── auth.ts               # Auth service
+│   ├── api.ts                # API client
+│   ├── utils.ts              # Utilities
+│   └── services/
+│       ├── email.ts          # Email service (Resend)
+│       ├── webhook.ts        # Webhook delivery
+│       └── payments.ts        # Payment integration
+├── hooks/                     # Custom hooks
+│   └── index.ts              # useData, usePrograms, etc.
+├── stores/                   # Global state
+│   └── index.ts              # UI store, App store
+└── middleware.ts             # Route protection
 ```
+
+## Database Schema
+
+PostgreSQL via Supabase with 12 tables:
+
+| Table | Purpose |
+|-------|---------|
+| `users` | User accounts with roles |
+| `advertisers` | Advertiser profiles |
+| `partners` | Partner profiles |
+| `programs` | Acquisition programs |
+| `program_channels` | Channel configs |
+| `conversions` | Conversion tracking |
+| `payouts` | Partner payouts |
+| `payment_methods` | Partner bank/ewallet |
+| `media_partners` | Media inventory |
+| `webhooks` | Webhook configs |
+| `webhook_deliveries` | Delivery logs |
+| `notifications` | User notifications |
+
+## API Routes
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/auth` | GET, POST | Login, register, logout, session |
+| `/api/advertisers` | GET, POST | List/create advertisers |
+| `/api/partners` | GET, POST | List/create partners |
+| `/api/partners/[id]` | GET, PUT, DELETE | Single partner CRUD |
+| `/api/programs` | GET, POST | List/create programs |
+| `/api/programs/[id]` | GET, PUT, DELETE | Single program CRUD |
+| `/api/conversions` | GET, POST | List/create conversions |
+| `/api/conversions/[id]` | GET, PUT | Validate/reject |
+| `/api/payouts` | GET, POST | List/create payouts |
+| `/api/notifications` | GET, POST | User notifications |
+| `/api/analytics` | GET | Dashboard stats |
+| `/api/media` | GET | Media partners catalog |
+| `/api/webhooks` | GET, POST, DELETE | Webhook management |
+
+## Services
+
+### Email (Resend)
+- Welcome emails
+- Conversion notifications
+- Payout confirmations
+- 10+ email templates
+
+### Webhook
+- Event-driven delivery
+- Retry with backoff
+- Delivery logging
+- Signature verification
+
+### Payment (Midtrans/Xendit)
+- Advertiser deposits
+- Partner payouts
+- Bank transfer, eWallets
+- QRIS support
+
+### Tracking Pixel
+- Fingerprint tracking
+- UTM attribution
+- Multi-device detection
+- Real-time conversion
 
 ## Key Types
 
 ```typescript
 // User & Auth
 UserRole: 'advertiser' | 'partner' | 'admin'
-User: { id, name, email, role, company_name }
 
 // Advertiser
-Advertiser: { company_name, industry, total_spend, active_programs }
+Advertiser: { company_name, industry, total_spend }
 
 // Partner
-PartnerType: 'media' | 'creator' | 'affiliate' | 'sales' | 'mission' | 'community' | 'agency'
-Partner: { partner_name, partner_type, niche, audience_size, quality_score, fraud_risk }
+PartnerType: 'media' | 'creator' | 'affiliate' | 'sales' | 'mission' | 'community'
+Partner: { partner_name, partner_type, niche, audience_size, quality_score }
 
 // Program
-ProgramObjective: 'app_install' | 'registration' | 'lead_form' | 'kyc' | 'purchase' | 'review_rating' | 'event_attendance' | 'survey_completion'
+Objective: 'app_install' | 'registration' | 'lead_form' | 'kyc' | 'purchase' | 'review_rating'
 PayoutModel: 'CPL' | 'CPA' | 'CPI' | 'CPS' | 'hybrid'
-Program: { name, objectives, budget, payout_model, channels, status }
 
 // Conversion
-ConversionStatus: 'pending' | 'valid' | 'rejected' | 'fraud'
+Status: 'pending' | 'valid' | 'rejected' | 'fraud'
 FraudSignal: 'duplicate_ip' | 'duplicate_device' | 'suspicious_velocity' | etc.
-
-// Analytics
-ProgramStats: { total_conversions, valid_conversions, average_cpa, quality_score }
 ```
 
 ## Design System
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| Primary | `#0066FF` | Buttons, links, accent |
-| Sidebar BG | `#0a1628` | Navigation background |
-| Content BG | `#FFFFFF` | Main content area |
-| Success | `#22C55E` | Valid conversions |
-| Warning | `#F59E0B` | Pending items |
-| Danger | `#EF4444` | Fraud, rejected |
+| Primary | `#0066FF` | Buttons, links |
+| Sidebar BG | `#0a1628` | Navigation |
+| Success | `#22C55E` | Valid |
+| Warning | `#F59E0B` | Pending |
+| Danger | `#EF4444` | Fraud |
 
-## Mock Data
+## Environment Variables
 
-Located in `src/lib/mock-data.ts`:
+Copy `.env.example` to `.env.local`:
 
-- **10 Advertisers**: Tunaiku, Prudential, XL Axiata, Pegadaian, AstraPay, Bank Saqu, TMRW, IKEA, Pizza Hut, Yamaha
-- **10 Partners**: JakselNews Media, Finance Creator Jakarta, Local Media Bandung, Parenting Community, Campus Sales, Affiliate Finance, Mission User Network, Automotive Creator, Muslim Family Media, Lifestyle Creator
-- **10 Programs**: Various objectives (app_install, registration, lead_form, purchase, review_rating)
-- **100+ Media Inventory**: Generated programmatically
-- **10 Conversions**: Sample conversion records with fraud signals
-- **5 Payouts**: Sample payout records
+```env
+# Supabase (optional)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
-## Available Scripts
+# Payments (optional)
+MIDTRANS_SERVER_KEY=
+MIDTRANS_CLIENT_KEY=
+XENDIT_SECRET_KEY=
+
+# Email (optional)
+RESEND_API_KEY=
+```
+
+## Development
 
 ```bash
-npm run dev      # Start dev server (http://localhost:3000)
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run ESLint
+npm run dev      # Dev server
+npm run build    # Production build
+npm run start    # Production server
+npm run lint     # ESLint
 ```
 
 ## Adding New Components
 
-Use Radix UI primitives wrapped with Tailwind CSS:
-
+Use Radix UI primitives:
 ```bash
-# Example: Adding a dialog
 npm install @radix-ui/react-dialog
 ```
 
-Components follow shadcn/ui patterns with `cn()` utility for class merging.
+Components follow `cn()` utility pattern for class merging.
 
-## API Routes
+## Available Scripts
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/programs` | GET/POST | List/create programs |
-| `/api/conversions` | GET/POST | List/create conversions |
-| `/api/partners` | GET | List partners |
-| `/api/payouts` | GET | List payouts |
-| `/api/webhooks` | POST | External integrations |
-| `/api/track/[type]` | GET | Tracking pixel |
+Demo mode works without any env vars. Production requires Supabase setup.
 
-## Environment Variables (Future)
+## Mock Data
 
-```env
-# Database
-DATABASE_URL=
+Located in `src/lib/mock-data.ts`:
+- 10 Advertisers
+- 10 Partners  
+- 10 Programs
+- 100+ Media Inventory
+- Sample Conversions
+- Sample Payouts
 
-# Auth
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+## Demo Users
 
-# Payments
-MIDTRANS_SERVER_KEY=
-XENDIT_API_KEY=
-
-# Analytics
-POSTHOG_API_KEY=
-```
-
-## Development Notes
-
-1. **No Real Auth**: Login page is demo-only, no session management
-2. **Mock Data**: All data is static JSON, no database required
-3. **Single Tenant**: All demo data is hardcoded for MVP
-4. **Mobile Responsive**: All pages are responsive (Tailwind)
-
-## Roadmap
-
-- [ ] Supabase authentication
-- [ ] PostgreSQL database
-- [ ] Real conversion tracking
-- [ ] Payment integration (Midtrans/Xendit)
-- [ ] Email notifications
-- [ ] Multi-tenant support
-- [ ] Mobile app (React Native)
+| Email | Role | Company |
+|-------|------|---------|
+| sarah@tunaiku.com | Advertiser | Tunaiku |
+| budi@jakselnews.com | Partner | JakselNews Media |
+| admin@cuanpintar.com | Admin | CuanPintar |

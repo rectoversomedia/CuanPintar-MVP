@@ -13,12 +13,12 @@ CuanPintar is a Customer Acquisition Operating System that connects advertisers 
 
 | Feature | Description |
 |---------|-------------|
-| **100+ Media Partners** | Access Indonesia's largest media distribution network including national news, finance, lifestyle, and niche verticals |
-| **Multi-Channel Distribution** | Distribute programs to creators, affiliates, sales teams, communities, and mission networks |
-| **Partner Marketplace** | Partners discover and join programs that match their audience and niche |
-| **Real-Time Tracking** | Monitor conversions with detailed analytics and attribution |
-| **Fraud Detection** | AI-powered protection for your ad spend with quality scoring |
-| **Transparent Payouts** | Clear commission structures and automated partner payouts |
+| **100+ Media Partners** | Access Indonesia's largest media distribution network |
+| **Multi-Channel Distribution** | Distribute to creators, affiliates, sales teams, communities |
+| **Partner Marketplace** | Partners discover programs matching their audience |
+| **Real-Time Tracking** | Conversion tracking with detailed analytics |
+| **Fraud Detection** | AI-powered fraud protection with quality scoring |
+| **Automated Payouts** | Multiple payment methods (Bank Transfer, eWallets) |
 
 ## 🚀 Quick Start
 
@@ -26,6 +26,7 @@ CuanPintar is a Customer Acquisition Operating System that connects advertisers 
 
 - Node.js 20+
 - npm or yarn
+- Supabase account (optional, demo mode available)
 
 ### Installation
 
@@ -37,13 +38,19 @@ cd CuanPintar-MVP
 # Install dependencies
 npm install
 
+# Copy environment variables
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+
 # Start development server
 npm run dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000)
 
-### Demo Access
+### Demo Mode
+
+The app works out-of-the-box with demo mode (mock data). No Supabase setup required!
 
 Navigate to `/login` and select a demo role:
 
@@ -55,131 +62,207 @@ Navigate to `/login` and select a demo role:
 
 ## 🏗️ Architecture
 
+### Frontend (Next.js 16)
 ```
 src/
-├── app/
-│   ├── (auth)/login/              # Authentication pages
-│   ├── (main)/                    # Protected application routes
-│   │   ├── admin/                 # Admin portal
-│   │   │   ├── advertisers/       # Advertiser management
-│   │   │   ├── partners/          # Partner management
-│   │   │   ├── programs/          # Program management
-│   │   │   ├── media-network/     # Media inventory
-│   │   │   ├── conversions/       # Conversion validation
-│   │   │   ├── fraud/             # Fraud review queue
-│   │   │   └── payouts/           # Payout management
-│   │   ├── advertiser/            # Advertiser portal
-│   │   │   ├── programs/          # Program CRUD
-│   │   │   ├── partners/          # Partner discovery
-│   │   │   ├── analytics/         # Analytics dashboard
-│   │   │   ├── billing/           # Billing & invoices
-│   │   │   └── settings/          # Account settings
-│   │   └── partner/              # Partner portal
-│   │       ├── programs/          # Joined programs
-│   │       ├── earnings/          # Earnings tracking
-│   │       ├── payouts/           # Payout history
-│   │       └── profile/           # Partner profile
-│   ├── api/                       # API routes
-│   │   ├── programs/              # Program CRUD
-│   │   ├── conversions/           # Conversion tracking
-│   │   ├── partners/              # Partner management
-│   │   ├── webhooks/              # External integrations
-│   │   └── payouts/              # Payout processing
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx                   # Landing page
+├── app/                      # App Router pages
+│   ├── (auth)/login/         # Authentication
+│   ├── (main)/               # Protected routes
+│   │   ├── advertiser/       # Advertiser portal (12 pages)
+│   │   ├── partner/           # Partner portal (8 pages)
+│   │   └── admin/             # Admin portal (8 pages)
+│   └── api/                   # API routes
 ├── components/
-│   ├── ui/                        # Radix UI primitives
-│   ├── layout/                    # Sidebar, Header
-│   ├── advertiser/                # Advertiser-specific components
-│   ├── admin/                     # Admin-specific components
-│   └── partner/                   # Partner-specific components
+│   ├── ui/                   # Radix UI primitives (16 components)
+│   ├── layout/               # Sidebar, Header
+│   └── features/             # Feature components
 ├── lib/
-│   ├── mock-data.ts               # Demo data
-│   ├── utils.ts                   # Utility functions
-│   └── auth.ts                    # Authentication helpers
-└── types/
-    └── index.ts                   # TypeScript definitions
+│   ├── supabase.ts           # Supabase client
+│   ├── auth.ts               # Auth service
+│   ├── api.ts                # API client
+│   └── services/             # Business services
+├── hooks/                    # Custom React hooks
+└── stores/                   # Global state management
 ```
 
-## 🎯 Key Concepts
+### Backend (Next.js API Routes)
+```
+/api/
+├── auth/                     # Authentication
+│   └── route.ts              # Login, register, logout, session
+├── advertisers/              # Advertiser management
+│   └── route.ts
+├── partners/                # Partner management
+│   ├── route.ts
+│   └── [id]/route.ts
+├── programs/                # Program management
+│   ├── route.ts
+│   └── [id]/route.ts
+├── conversions/             # Conversion tracking
+│   ├── route.ts
+│   └── [id]/route.ts
+├── payouts/                # Payout processing
+│   └── route.ts
+├── notifications/           # User notifications
+│   └── route.ts
+├── analytics/              # Dashboard statistics
+│   └── route.ts
+├── media/                  # Media partners catalog
+│   └── route.ts
+├── webhooks/               # Webhook delivery
+│   └── route.ts
+└── track/                  # Tracking pixel
+    └── [type]/route.ts
+```
 
-| Concept | Description |
-|---------|-------------|
-| **Program** | The core product unit for acquisition campaigns (similar to "campaign" but more descriptive) |
-| **Partner Types** | Media, Creator, Affiliate, Sales, Mission, Community - different channels for distribution |
-| **Conversion** | A tracked user action: app install, registration, lead form, purchase, etc. |
-| **Quality Score** | 0-100% metric indicating partner/program quality based on conversion validation |
-| **Fraud Risk** | Low/Medium/High indicator for suspicious activity detection |
+### Database (PostgreSQL via Supabase)
 
-## 💻 Tech Stack
+**Tables:**
+| Table | Description |
+|-------|-------------|
+| `users` | User accounts with roles |
+| `advertisers` | Advertiser profiles |
+| `partners` | Partner profiles with quality scores |
+| `programs` | Acquisition programs |
+| `program_channels` | Program channel configurations |
+| `conversions` | Tracked conversions |
+| `payouts` | Partner payout records |
+| `payment_methods` | Partner payment details |
+| `media_partners` | Media inventory |
+| `webhooks` | Webhook configurations |
+| `webhook_deliveries` | Delivery logs |
+| `notifications` | User notifications |
+
+## 🔧 Tech Stack
 
 | Category | Technology |
 |----------|------------|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS 4 |
-| UI Components | Radix UI primitives |
-| Icons | Lucide React |
-| Charts | Recharts |
-| State | React Hooks + Context |
+| **Frontend** | Next.js 16, React 19, TypeScript 5 |
+| **Styling** | Tailwind CSS 4 |
+| **UI Components** | Radix UI primitives |
+| **Icons** | Lucide React |
+| **Charts** | Recharts |
+| **Database** | PostgreSQL (Supabase) |
+| **Auth** | Supabase Auth |
+| **Payments** | Midtrans, Xendit |
+| **Email** | Resend |
+| **Hosting** | Vercel |
+
+## 📊 Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Program** | Core product unit for acquisition campaigns |
+| **Partner Types** | Media, Creator, Affiliate, Sales, Mission, Community |
+| **Conversion** | Tracked user action (install, registration, purchase) |
+| **Quality Score** | 0-100% metric for partner/program quality |
+| **Fraud Risk** | Low/Medium/High indicator |
 
 ## 🎨 Design System
 
 ### Colors
 
-| Name | Hex | Usage |
-|------|-----|-------|
-| Primary | `#0066FF` | Accent, buttons, links |
+| Token | Hex | Usage |
+|-------|-----|-------|
+| Primary | `#0066FF` | Buttons, links, accent |
 | Sidebar | `#0a1628` | Navigation background |
-| Background | `#FFFFFF` | Content area |
 | Success | `#22C55E` | Valid conversions |
 | Warning | `#F59E0B` | Pending items |
 | Danger | `#EF4444` | Fraud, rejected |
 
-### Typography
+## 🔐 Environment Variables
 
-- **Font**: System font stack (Tailwind default)
-- **Headings**: Bold, varying sizes
-- **Body**: Regular weight, 14-16px
+Copy `.env.example` to `.env.local` and configure:
 
-## 📊 Sample Data
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 
-The MVP includes realistic demo data:
+# Payments (optional)
+MIDTRANS_SERVER_KEY=xxx
+MIDTRANS_CLIENT_KEY=xxx
 
-**Advertisers (10)**
-Tunaiku, Prudential, XL Axiata, Pegadaian, AstraPay, Bank Saqu, TMRW by UOB, IKEA Indonesia, Pizza Hut Indonesia, Yamaha Indonesia
+# Email (optional)
+RESEND_API_KEY=xxx
+```
 
-**Partners (150+)**
-- Media Networks: 100+ partners including Kompas, Tempo, Detik News, CNN Indonesia
-- Creators: 500+ finance, lifestyle, and automotive content creators
-- Affiliates: 200+ product and service affiliates
-- Sales Teams: 50+ campus and community sales networks
-- Communities: 150+ parenting, professional, and interest groups
+## 📱 Services
 
-**Programs (10)**
-Various campaign types: App Install + Registration, Lead Forms, Purchases, Reviews & Ratings, Event Attendance
+### Webhook Service
+Automatic notifications for:
+- Conversion events (created, validated, rejected, fraud)
+- Payout events (created, approved, paid, failed)
+- Partner events (registered, approved, suspended)
+- Program events (created, activated, paused, completed)
 
-## 🔜 Next Steps
+### Email Service
+Transactional emails:
+- Welcome emails (advertiser/partner)
+- Conversion notifications
+- Payout confirmations
+- Program updates
 
-- [ ] Add Supabase/Auth0 authentication
-- [ ] Implement PostgreSQL database integration
-- [ ] Build conversion tracking pixel (JavaScript)
-- [ ] Add WebSocket real-time updates
-- [ ] Implement payout automation (Midtrans, Xendit)
-- [ ] Build mobile app (React Native)
-- [ ] Add email/SMS notifications
-- [ ] Implement multi-tenant architecture
+### Payment Service
+- Midtrans integration (advertiser deposits)
+- Xendit integration (partner payouts)
+- Multiple payment methods (Bank Transfer, GoPay, OVO, DANA, LinkAja)
+
+### Tracking Pixel
+JavaScript library for conversion tracking:
+```html
+<script src="/js/pixel.js" data-program="prog_123"></script>
+```
+
+Features:
+- Fingerprint-based attribution
+- UTM parameter tracking
+- Multi-device detection
+- Real-time conversion recording
+
+## 🚢 Deployment
+
+### Vercel (Recommended)
+
+1. Push to GitHub
+2. Import project in Vercel
+3. Configure environment variables
+4. Deploy!
+
+### Database Setup
+
+1. Create Supabase project
+2. Run migrations:
+   ```bash
+   # Using Supabase CLI
+   supabase db push
+   ```
+3. Configure `.env.local` with Supabase credentials
+
+## 📋 Sample Data
+
+The app includes demo data for:
+- 10 Advertisers (Tunaiku, Prudential, XL Axiata, etc.)
+- 10 Partners (Media networks, creators, affiliates)
+- 10 Programs (Various campaign types)
+- 100+ Media Partners (Generated)
+- Sample conversions and payouts
+
+## 🔜 Roadmap
+
+- [ ] Multi-tenant architecture
+- [ ] Mobile app (React Native)
+- [ ] Advanced fraud detection (ML)
+- [ ] A/B testing for programs
+- [ ] API keys for partners
+- [ ] White-label solutions
 
 ## 📄 License
 
 Proprietary - All rights reserved by Recto Vero Media
 
-## 👥 Contributing
-
-This is a proprietary project. Please contact the maintainers for collaboration opportunities.
-
-## 📞 Contact
+## 👥 Contact
 
 - **Company**: Recto Vero Media
 - **GitHub**: [rectoversomedia](https://github.com/rectoversomedia)
+- **Website**: https://cuanpintar.com
