@@ -1,6 +1,6 @@
 'use client';
 
-import { useUI } from '@/stores';
+import { useStore } from '@/stores/store';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +19,7 @@ const styles = {
 };
 
 export function Toast() {
-  const { state, hideToast } = useUI();
+  const { state, hideToast } = useStore();
   const { toast } = state;
 
   if (!toast.show) return null;
