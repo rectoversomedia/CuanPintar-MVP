@@ -80,12 +80,17 @@ function LoginPage() {
 
     // Store in localStorage for demo
     localStorage.setItem('cp_user', JSON.stringify(user));
-    localStorage.setItem('cp_session', JSON.stringify({ demo: true }));
+    localStorage.setItem('cp_session', JSON.stringify({
+      demo: true,
+      role: role,
+      userId: user.id
+    }));
 
-    // Redirect after short delay
-    setTimeout(() => {
-      router.push(`/${role}`);
-    }, 300);
+    // Small delay for visual feedback
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Navigate to dashboard
+    router.push(`/${role}`);
   };
 
   const handleRoleSelect = (role: Role) => {
