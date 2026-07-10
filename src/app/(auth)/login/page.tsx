@@ -1,25 +1,23 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Buildings,
+  Building2,
   Users,
   ShieldCheck,
-  Envelope,
-  Lock,
   ArrowLeft,
-} from '@phosphor-icons/react';
+  ArrowRight,
+  Check,
+  Zap,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 type Role = 'advertiser' | 'partner' | 'admin';
-
-const colors = {
-  primary: '#FF6B35',
-  secondary: '#0066FF',
-};
 
 const DEMO_USERS = [
   {
@@ -45,287 +43,335 @@ const DEMO_USERS = [
   },
 ];
 
-function LoginPage() {
+const roles = [
+  {
+    id: 'advertiser' as Role,
+    title: 'Advertiser',
+    description: 'Launch campaigns and manage partners',
+    icon: Building2,
+    gradient: 'from-[#6366F1] to-[#4F46E5]',
+  },
+  {
+    id: 'partner' as Role,
+    title: 'Partner',
+    description: 'Discover programs and earn commissions',
+    icon: Users,
+    gradient: 'from-[#8B5CF6] to-[#7C3AED]',
+  },
+  {
+    id: 'admin' as Role,
+    title: 'Admin',
+    description: 'Manage platform operations',
+    icon: ShieldCheck,
+    gradient: 'from-[#F43F5E] to-[#E11D48]',
+  },
+];
+
+const features = [
+  '100+ verified media partners',
+  'Multi-channel distribution',
+  'Real-time tracking & fraud detection',
+  'Transparent payouts',
+];
+
+export default function LoginPage() {
   const router = useRouter();
+  const [step, setStep] = useState<'role' | 'credentials'>('role');
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const roles = [
-    {
-      id: 'advertiser' as Role,
-      title: 'Advertiser',
-      description: 'Launch campaigns and manage partners',
-      icon: <Buildings size={32} weight="duotone" />,
-      gradient: 'from-blue-500 to-blue-600',
-    },
-    {
-      id: 'partner' as Role,
-      title: 'Partner',
-      description: 'Discover programs and earn commissions',
-      icon: <Users size={32} weight="duotone" />,
-      gradient: 'from-purple-500 to-purple-600',
-    },
-    {
-      id: 'admin' as Role,
-      title: 'Admin',
-      description: 'Manage platform operations',
-      icon: <ShieldCheck size={32} weight="duotone" />,
-      gradient: 'from-orange-500 to-red-500',
-    },
-  ];
+  const handleRoleSelect = (role: Role) => {
+    setSelectedRole(role);
+    setStep('credentials');
+  };
 
-  const handleDemoLogin = async (role: Role) => {
+  const handleDemoLogin = async () => {
+    if (!selectedRole) return;
     setIsLoading(true);
-    const user = DEMO_USERS.find((u) => u.role === role) || DEMO_USERS[0];
 
-    // Store in localStorage for demo
+    const user = DEMO_USERS.find((u) => u.role === selectedRole);
     localStorage.setItem('cp_user', JSON.stringify(user));
     localStorage.setItem('cp_session', JSON.stringify({
       demo: true,
-      role: role,
-      userId: user.id
+      role: selectedRole,
+      userId: user?.id
     }));
 
-    // Small delay for visual feedback
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Navigate to dashboard
-    router.push(`/${role}`);
-  };
-
-  const handleRoleSelect = (role: Role) => {
-    setSelectedRole(role);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    router.push(`/${selectedRole}`);
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0a1628] via-[#1a2a4a] to-[#0a1628] p-12 flex-col justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-16">
-            <span className="text-3xl font-bold">
-              <span className="text-[#FF6B35]">cuan</span>
-              <span className="text-[#0066FF]">pintar</span>
-            </span>
-          </div>
+    <div className="min-h-screen bg-[var(--background)] flex">
+      {/* Left Panel - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[var(--sidebar-bg)] p-12 flex-col justify-between relative overflow-hidden">
+        {/* Background Gradient Orbs */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-[#6366F1]/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#8B5CF6]/10 rounded-full blur-3xl" />
 
-          <h1 className="text-4xl font-bold text-white mb-6 leading-tight">
-            Customer Acquisition OS for Indonesia.
-            <br />
-            <span className="bg-gradient-to-r from-[#FF6B35] to-[#EC4899] bg-clip-text text-transparent">
-              Create once. Distribute everywhere.
+        <div className="relative z-10">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 mb-16">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-[#6366F1]/20">
+              <span className="text-white font-bold text-xl">C</span>
+            </div>
+            <span className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
+              CuanPintar
             </span>
-          </h1>
+          </Link>
 
-          <div className="space-y-4 mt-12">
-            <h3 className="text-lg font-semibold text-white">Why CuanPintar?</h3>
-            <ul className="space-y-3 text-gray-300">
-              <li className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#0066FF]" />
-                100+ verified media partners across Indonesia
-              </li>
-              <li className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#FF6B35]" />
-                Multi-channel distribution to creators, affiliates & sales
-              </li>
-              <li className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
-                Real-time tracking and fraud detection
-              </li>
-              <li className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#22C55E]" />
-                Transparent payouts for all partners
-              </li>
+          {/* Hero Text */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+              Customer Acquisition OS
+              <br />
+              <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#F43F5E] bg-clip-text text-transparent">
+                for Indonesia.
+              </span>
+            </h1>
+            <p className="text-lg text-white/60 mb-8 max-w-md">
+              Create once. Distribute everywhere. Manage your entire partner ecosystem from one platform.
+            </p>
+
+            {/* Features */}
+            <ul className="space-y-3">
+              {features.map((feature, i) => (
+                <motion.li
+                  key={feature}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                  className="flex items-center gap-3 text-white/80"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#10B981]/20 flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5 text-[#10B981]" />
+                  </div>
+                  {feature}
+                </motion.li>
+              ))}
             </ul>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="border-t border-white/10 pt-6">
-          <blockquote className="text-gray-400 italic">
+        {/* Testimonial */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="relative z-10 border-t border-white/10 pt-6"
+        >
+          <blockquote className="text-white/60 italic">
             "CuanPintar transformed how we manage acquisition across multiple channels.
             One program, everywhere."
           </blockquote>
-          <p className="text-white mt-2 font-medium">Thomas Wijaya</p>
-          <p className="text-gray-500 text-sm">Marketing Director, Tunaiku</p>
-        </div>
+          <p className="text-white mt-3 font-medium">Sarah Wijaya</p>
+          <p className="text-white/40 text-sm">Marketing Director, Tunaiku</p>
+        </motion.div>
       </div>
 
-      {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+      {/* Right Panel - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-[var(--background)]">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden mb-8 text-center">
-            <span className="text-2xl font-bold">
-              <span className="text-[#FF6B35]">cuan</span>
-              <span className="text-[#0066FF]">pintar</span>
+          <div className="lg:hidden mb-8 flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
+              <span className="text-white font-bold text-lg">C</span>
+            </div>
+            <span className="text-xl font-bold text-[var(--foreground)]" style={{ fontFamily: 'var(--font-heading)' }}>
+              CuanPintar
             </span>
           </div>
 
-          {!selectedRole ? (
-            <>
-              {/* Role Selection */}
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-                <p className="text-gray-500">Select your role to continue</p>
-              </div>
-
-              <div className="space-y-4">
-                {roles.map((role) => (
-                  <button
-                    key={role.id}
-                    onClick={() => handleRoleSelect(role.id)}
-                    className="w-full p-6 rounded-2xl border-2 border-gray-200 bg-white hover:border-[#0066FF] hover:shadow-xl transition-all duration-300 text-left group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${role.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}
-                      >
-                        {role.icon}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900">{role.title}</h3>
-                        <p className="text-gray-500 text-sm">{role.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Demo Notice */}
-              <div className="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
-                <p className="text-sm text-blue-800">
-                  <strong>Demo Mode:</strong> This is a demo environment. No real authentication required.
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Login Form */}
-              <button
-                onClick={() => setSelectedRole(null)}
-                className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 transition-colors"
+          <AnimatePresence mode="wait">
+            {step === 'role' ? (
+              <motion.div
+                key="role-selection"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
               >
-                <ArrowLeft size={18} />
-                Back to role selection
-              </button>
+                {/* Header */}
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">
+                    Welcome Back
+                  </h2>
+                  <p className="text-[var(--foreground-muted)]">
+                    Select your role to continue
+                  </p>
+                </div>
 
-              <div className="text-center mb-8">
-                <div
-                  className={`w-16 h-16 rounded-2xl mx-auto mb-4 bg-gradient-to-br ${
-                    selectedRole === 'advertiser'
-                      ? 'from-blue-500 to-blue-600'
-                      : selectedRole === 'partner'
-                      ? 'from-purple-500 to-purple-600'
-                      : 'from-orange-500 to-red-500'
-                  } flex items-center justify-center text-white shadow-lg`}
+                {/* Role Cards */}
+                <div className="space-y-4">
+                  {roles.map((role, i) => (
+                    <motion.div
+                      key={role.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                    >
+                      <button
+                        onClick={() => handleRoleSelect(role.id)}
+                        className="w-full p-5 rounded-xl border border-[var(--border)] bg-[var(--card)] hover:border-[#6366F1] hover:shadow-lg hover:shadow-[#6366F1]/10 transition-all duration-300 text-left group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${role.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
+                            <role.icon size={28} />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-[var(--foreground)]">{role.title}</h3>
+                            <p className="text-sm text-[var(--foreground-muted)]">{role.description}</p>
+                          </div>
+                          <ArrowRight className="w-5 h-5 text-[var(--foreground-muted)] group-hover:text-[#6366F1] group-hover:translate-x-1 transition-all" />
+                        </div>
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Demo Notice */}
+                <div className="mt-6 p-4 rounded-xl bg-[#6366F1]/5 border border-[#6366F1]/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-[#6366F1]" />
+                    <p className="text-sm font-medium text-[#6366F1]">Demo Mode Active</p>
+                  </div>
+                  <p className="text-sm text-[var(--foreground-muted)]">
+                    No authentication required. Click any role to explore.
+                  </p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="credentials"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                {/* Back Button */}
+                <button
+                  onClick={() => setStep('role')}
+                  className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] mb-6 transition-colors"
                 >
-                  {selectedRole === 'advertiser' ? (
-                    <Buildings size={32} weight="duotone" />
-                  ) : selectedRole === 'partner' ? (
-                    <Users size={32} weight="duotone" />
-                  ) : (
-                    <ShieldCheck size={32} weight="duotone" />
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to role selection
+                </button>
+
+                {/* Role Badge */}
+                <div className="flex items-center gap-3 mb-6">
+                  {selectedRole && (
+                    <>
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${roles.find(r => r.id === selectedRole)?.gradient} flex items-center justify-center text-white shadow-lg`}>
+                        {(() => {
+                          const RoleIcon = roles.find(r => r.id === selectedRole)?.icon;
+                          return RoleIcon ? <RoleIcon size={24} /> : null;
+                        })()}
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold text-[var(--foreground)] capitalize">
+                          {selectedRole} Portal
+                        </h2>
+                        <p className="text-sm text-[var(--foreground-muted)]">
+                          Enter your credentials to continue
+                        </p>
+                      </div>
+                    </>
                   )}
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Sign in as {selectedRole}
-                </h2>
-                <p className="text-gray-500">Enter your credentials to continue</p>
-              </div>
 
-              <form className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <div className="relative">
-                    <Envelope size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <Input
-                      type="email"
-                      placeholder="email@example.com"
-                      defaultValue={
-                        selectedRole === 'advertiser'
-                          ? 'sarah@tunaiku.com'
-                          : selectedRole === 'partner'
-                          ? 'budi@jakselnews.com'
-                          : 'admin@cuanpintar.com'
-                      }
-                      className="pl-10 h-12 border-gray-200 focus:border-[#0066FF] focus:ring-[#0066FF]/20"
-                    />
+                {/* Login Form */}
+                <Card className="p-6">
+                  <CardContent className="space-y-4 p-0">
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        placeholder="email@example.com"
+                        defaultValue={
+                          selectedRole === 'advertiser'
+                            ? 'sarah@tunaiku.com'
+                            : selectedRole === 'partner'
+                            ? 'budi@jakselnews.com'
+                            : 'admin@cuanpintar.com'
+                        }
+                        className="h-12"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                        Password
+                      </label>
+                      <Input
+                        type="password"
+                        placeholder="Enter password"
+                        defaultValue="demo123"
+                        className="h-12"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-[var(--border)] bg-[var(--card)]"
+                        />
+                        <span className="text-[var(--foreground-muted)]">Remember me</span>
+                      </label>
+                      <a href="#" className="text-[#6366F1] hover:underline">
+                        Forgot password?
+                      </a>
+                    </div>
+
+                    <Button
+                      onClick={handleDemoLogin}
+                      disabled={isLoading}
+                      className="w-full h-12 text-base font-semibold"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 0h12a8 8 0 010 16z" />
+                          </svg>
+                          Signing in...
+                        </span>
+                      ) : (
+                        'Sign In'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Demo Credentials */}
+                <div className="mt-6 p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                  <p className="text-xs font-semibold text-[var(--foreground-muted)] uppercase tracking-wider mb-3">
+                    Demo Credentials
+                  </p>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-[var(--foreground-muted)]">Advertiser</p>
+                      <p className="text-[var(--foreground)] font-mono text-xs">sarah@tunaiku.com</p>
+                    </div>
+                    <div>
+                      <p className="text-[var(--foreground-muted)]">Partner</p>
+                      <p className="text-[var(--foreground)] font-mono text-xs">budi@jakselnews.com</p>
+                    </div>
+                    <div>
+                      <p className="text-[var(--foreground-muted)]">Admin</p>
+                      <p className="text-[var(--foreground)] font-mono text-xs">admin@cuanpintar.com</p>
+                    </div>
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                  <div className="relative">
-                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <Input
-                      type="password"
-                      placeholder="Enter password"
-                      defaultValue="demo123"
-                      className="pl-10 h-12 border-gray-200 focus:border-[#0066FF] focus:ring-[#0066FF]/20"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" className="rounded border-gray-300" />
-                    <span className="text-gray-600">Remember me</span>
-                  </label>
-                  <a href="#" className="text-[#0066FF] hover:underline">
-                    Forgot password?
-                  </a>
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={() => handleDemoLogin(selectedRole)}
-                  disabled={isLoading}
-                  className="w-full h-12 bg-gradient-to-r from-[#FF6B35] to-[#EC4899] hover:opacity-90 text-white font-semibold shadow-lg"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 0h12a8 8 0 010 16z" />
-                      </svg>
-                      Signing in...
-                    </span>
-                  ) : (
-                    'Sign In'
-                  )}
-                </Button>
-              </form>
-
-              {/* Demo Credentials */}
-              <div className="mt-6 p-4 rounded-xl bg-yellow-50 border border-yellow-200">
-                <p className="text-sm font-medium text-yellow-800 mb-2">Demo Credentials:</p>
-                <div className="space-y-1 text-sm text-yellow-700">
-                  <p>
-                    <strong>Advertiser:</strong> sarah@tunaiku.com
-                  </p>
-                  <p>
-                    <strong>Partner:</strong> budi@jakselnews.com
-                  </p>
-                  <p>
-                    <strong>Admin:</strong> admin@cuanpintar.com
-                  </p>
-                  <p className="mt-2">
-                    <strong>Password:</strong> demo123
-                  </p>
-                </div>
-              </div>
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function Login() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><span className="text-gray-500">Loading...</span></div>}>
-      <LoginPage />
-    </Suspense>
   );
 }
