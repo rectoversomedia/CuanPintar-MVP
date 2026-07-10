@@ -272,6 +272,7 @@ function LoginPage() {
                 </div>
 
                 <Button
+                  type="button"
                   onClick={() => handleDemoLogin(selectedRole)}
                   disabled={isLoading}
                   className="w-full h-12 bg-gradient-to-r from-[#FF6B35] to-[#EC4899] hover:opacity-90 text-white font-semibold shadow-lg"

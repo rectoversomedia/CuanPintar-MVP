@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import {
-  Buildings,
+  Building,
   Users,
-  ChartLine,
+  ChartBar,
   ShieldCheck,
-  CurrencyCircleDollar,
+  CurrencyDollar,
   ShoppingCart,
   TrendUp,
   ArrowRight,
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
     {
       label: 'Active Advertisers',
       value: dashboard.active_advertisers,
-      icon: Buildings,
+      icon: Building,
       color: colors.secondary,
       bgGradient: 'from-blue-500/10 to-blue-600/5',
       borderColor: 'border-blue-200',
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
     {
       label: 'Active Programs',
       value: dashboard.active_programs,
-      icon: ChartLine,
+      icon: ChartBar,
       color: colors.primary,
       bgGradient: 'from-orange-500/10 to-orange-600/5',
       borderColor: 'border-orange-200',
@@ -223,7 +223,7 @@ export default function AdminDashboard() {
                         className="w-10 h-10 rounded-lg flex items-center justify-center"
                         style={{ backgroundColor: `${metric.color}15` }}
                       >
-                        <CurrencyCircleDollar size={20} weight="duotone" style={{ color: metric.color }} />
+                        <CurrencyDollar size={20} weight="duotone" style={{ color: metric.color }} />
                       </div>
                       <span className="text-sm font-medium text-gray-600">{metric.label}</span>
                     </div>

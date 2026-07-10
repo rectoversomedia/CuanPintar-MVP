@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import {
-  Buildings,
+  Building,
   MagnifyingGlass,
   Funnel,
   CheckCircle,
@@ -71,7 +71,7 @@ export default function AdminAdvertisersPage() {
   const totalSpend = mockAdvertisers.reduce((acc, a) => acc + a.total_spend, 0);
 
   const stats = [
-    { label: 'Total Advertisers', value: mockAdvertisers.length, icon: Buildings, color: colors.secondary },
+    { label: 'Total Advertisers', value: mockAdvertisers.length, icon: Building, color: colors.secondary },
     { label: 'Active', value: activeCount, icon: CheckCircle, color: colors.success },
     { label: 'Pending Review', value: pendingCount, icon: TrendUp, color: colors.warning },
     { label: 'Total Spend', value: formatCurrency(totalSpend), icon: CurrencyDollar, color: colors.primary },

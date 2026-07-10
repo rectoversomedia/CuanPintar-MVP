@@ -12,7 +12,7 @@ import {
   Target,
   TrendUp,
   Plus,
-  ChartLine,
+  ChartBar,
   Warning,
 } from '@phosphor-icons/react';
 import { Sidebar } from '@/components/layout/sidebar';
@@ -74,7 +74,7 @@ export default function AdminProgramsPage() {
 
   const stats = [
     { label: 'Total Programs', value: mockPrograms.length, icon: Megaphone, color: colors.primary },
-    { label: 'Active', value: activeCount, icon: ChartLine, color: colors.success },
+    { label: 'Active', value: activeCount, icon: ChartBar, color: colors.success },
     { label: 'Pending Review', value: pendingCount, icon: Warning, color: colors.warning },
     { label: 'Total Budget', value: formatCurrency(totalBudget), icon: CurrencyDollar, color: colors.secondary },
   ];

@@ -1,17 +1,42 @@
 import * as React from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        'rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200',
-        className
-      )}
-      {...props}
-    />
-  )
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  hover?: boolean;
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, hover = false, ...props }, ref) => {
+    if (hover) {
+      return (
+        <motion.div
+          ref={ref}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          whileHover={{ y: -2 }}
+          className={cn(
+            'rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition-all duration-200 cursor-pointer hover:shadow-md hover:border-[var(--primary-200)]',
+            className
+          )}
+        >
+          {props.children}
+        </motion.div>
+      );
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          'rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm',
+          className
+        )}
+        {...props}
+      />
+    );
+  }
 );
 Card.displayName = 'Card';
 
@@ -30,7 +55,10 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HT
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-lg font-semibold leading-none tracking-tight text-gray-900', className)}
+      className={cn(
+        'text-lg font-semibold leading-none tracking-tight text-[var(--foreground)] font-[family-name:var(--font-heading)]',
+        className
+      )}
       {...props}
     />
   )
@@ -41,7 +69,7 @@ const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn('text-sm text-gray-500', className)}
+      className={cn('text-sm text-[var(--foreground-muted)]', className)}
       {...props}
     />
   )
