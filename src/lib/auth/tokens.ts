@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isSupabaseConfigured } from './supabase';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 // JWT payload types
 export interface JWTPayload {

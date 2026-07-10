@@ -205,6 +205,7 @@ class RetryQueue {
       pending: 0,
       processing: 0,
       failed: 0,
+      delivered: 0,
       total: this.queue.size,
       processingCount: this.processingCount,
     };

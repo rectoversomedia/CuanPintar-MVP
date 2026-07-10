@@ -176,7 +176,7 @@ export async function sendVerificationEmail(
   name: string,
   verificationUrl: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { sendEmail, EMAIL_TEMPLATES } = await import('./services/email');
+  const { sendEmail, EMAIL_TEMPLATES } = await import('@/lib/services/email');
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -222,7 +222,7 @@ export async function sendPasswordResetEmail(
   name: string,
   resetUrl: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { sendEmail } = await import('./services/email');
+  const { sendEmail } = await import('@/lib/services/email');
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

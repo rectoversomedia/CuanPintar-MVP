@@ -295,7 +295,7 @@ export function reportWebVitals(callback?: (metrics: PerformanceMetrics) => void
     // FID
     const fidObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
-      const firstEntry = entries[0];
+      const firstEntry = entries[0] as PerformanceEventTiming;
       callback?.({ fid: firstEntry.processingStart - firstEntry.startTime });
     });
     fidObserver.observe({ entryTypes: ['first-input'] });

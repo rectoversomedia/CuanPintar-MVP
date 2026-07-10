@@ -125,7 +125,7 @@ async function handleResetPassword(request: NextRequest, body: Record<string, un
   // Update password
   if (isSupabaseConfigured() && result.userId) {
     // Update Supabase Auth password
-    const { data: authData, error: authError } = await supabase.auth.admin.updateUser(
+    const { data: authData, error: authError } = await supabase.auth.admin.updateUserById(
       result.userId,
       { password }
     );

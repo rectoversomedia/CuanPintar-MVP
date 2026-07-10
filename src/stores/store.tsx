@@ -23,10 +23,13 @@ export interface UIState {
   toast: ToastState;
 }
 
-export interface ToastState {
-  show: boolean;
+export interface ToastPayload {
   message: string;
   type: 'success' | 'error' | 'info' | 'warning';
+}
+
+export interface ToastState extends ToastPayload {
+  show: boolean;
 }
 
 // App State
@@ -75,7 +78,7 @@ type UIAction =
   | { type: 'SET_NOTIFICATIONS_OPEN'; payload: boolean }
   | { type: 'OPEN_MODAL'; payload: string }
   | { type: 'CLOSE_MODAL' }
-  | { type: 'SHOW_TOAST'; payload: ToastState }
+  | { type: 'SHOW_TOAST'; payload: ToastPayload }
   | { type: 'HIDE_TOAST' };
 
 type AppAction =
@@ -140,7 +143,7 @@ function uiReducer(state: UIState, action: UIAction): UIState {
     case 'CLOSE_MODAL':
       return { ...state, modalOpen: null };
     case 'SHOW_TOAST':
-      return { ...state, toast: { show: true, ...action.payload } };
+      return { ...state, toast: { ...action.payload, show: true } };
     case 'HIDE_TOAST':
       return { ...state, toast: { ...state.toast, show: false } };
     default:
