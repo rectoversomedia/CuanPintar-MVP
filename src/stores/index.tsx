@@ -14,7 +14,6 @@ import { createContext, useContext, useReducer, ReactNode, Dispatch } from 'reac
 
 interface UIState {
   sidebarCollapsed: boolean;
-  theme: 'light' | 'dark';
   notificationsOpen: boolean;
   modalOpen: string | null;
   toast: {
@@ -27,7 +26,6 @@ interface UIState {
 type UIAction =
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'SET_SIDEBAR'; payload: boolean }
-  | { type: 'SET_THEME'; payload: 'light' | 'dark' }
   | { type: 'TOGGLE_NOTIFICATIONS' }
   | { type: 'SET_NOTIFICATIONS_OPEN'; payload: boolean }
   | { type: 'OPEN_MODAL'; payload: string }
@@ -37,7 +35,6 @@ type UIAction =
 
 const initialUIState: UIState = {
   sidebarCollapsed: false,
-  theme: 'light',
   notificationsOpen: false,
   modalOpen: null,
   toast: {
@@ -53,8 +50,6 @@ function uiReducer(state: UIState, action: UIAction): UIState {
       return { ...state, sidebarCollapsed: !state.sidebarCollapsed };
     case 'SET_SIDEBAR':
       return { ...state, sidebarCollapsed: action.payload };
-    case 'SET_THEME':
-      return { ...state, theme: action.payload };
     case 'TOGGLE_NOTIFICATIONS':
       return { ...state, notificationsOpen: !state.notificationsOpen };
     case 'SET_NOTIFICATIONS_OPEN':
@@ -77,7 +72,6 @@ interface UIContextType {
   dispatch: Dispatch<UIAction>;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
-  setTheme: (theme: 'light' | 'dark') => void;
   toggleNotifications: () => void;
   openModal: (modalId: string) => void;
   closeModal: () => void;
@@ -92,7 +86,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   const toggleSidebar = () => dispatch({ type: 'TOGGLE_SIDEBAR' });
   const setSidebarCollapsed = (collapsed: boolean) => dispatch({ type: 'SET_SIDEBAR', payload: collapsed });
-  const setTheme = (theme: 'light' | 'dark') => dispatch({ type: 'SET_THEME', payload: theme });
   const toggleNotifications = () => dispatch({ type: 'TOGGLE_NOTIFICATIONS' });
   const openModal = (modalId: string) => dispatch({ type: 'OPEN_MODAL', payload: modalId });
   const closeModal = () => dispatch({ type: 'CLOSE_MODAL' });
@@ -109,7 +102,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
         dispatch,
         toggleSidebar,
         setSidebarCollapsed,
-        setTheme,
         toggleNotifications,
         openModal,
         closeModal,
