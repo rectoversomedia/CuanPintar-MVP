@@ -6,7 +6,24 @@
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
 
-const CSRF_SECRET = process.env.CSRF_SECRET || 'development-secret-change-in-production';
+/**
+ * Get CSRF secret from environment
+ */
+function getCSRFSecret(): string {
+  const secret = process.env.CSRF_SECRET;
+  if (!secret) {
+    // Fail hard in production - no fallback secrets allowed
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: CSRF_SECRET environment variable is not set. Please configure it before deploying.');
+    }
+    // Only for development - warn and use fallback
+    console.warn('⚠️ CSRF_SECRET not set, using development fallback. DO NOT use in production!');
+    return 'development-secret-change-in-production';
+  }
+  return secret;
+}
+
+const CSRF_SECRET = getCSRFSecret();
 const CSRF_COOKIE_NAME = 'cp_csrf';
 const CSRF_HEADER_NAME = 'x-csrf-token';
 const CSRF_TOKEN_LENGTH = 32;

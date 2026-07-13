@@ -1,17 +1,54 @@
 /**
- * Dynamic Track API Routes
+ * Dynamic Track API Routes - Secured
  *
  * Handles dynamic tracking endpoints based on type parameter
- * Supports: click, conversion, pixel, validate
+ * Supports: click, conversion, pixel, validate, stats
+ *
+ * Security:
+ * - Rate limiting on all endpoints
+ * - Fraud detection
+ * - S2S webhook signature verification
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { quickFraudCheck, type ConversionContext } from '@/lib/tracking/fraud-engine';
+import { checkPublicRateLimit, createRateLimitResponse } from '@/lib/security/public-rate-limit';
+import { verifySignedWebhookPayload } from '@/lib/services/webhook-verification';
+import { z } from 'zod';
 
 // In-memory storage (for demo mode)
 const clickStore = new Map<string, Record<string, unknown>>();
 const conversionStore = new Map<string, Record<string, unknown>>();
+
+// S2S conversion schema for validation
+const s2sConversionSchema = z.object({
+  program_id: z.string().min(1),
+  partner_id: z.string().min(1),
+  event_id: z.string().optional(),
+  event_name: z.string().optional(),
+  channel_type: z.enum(['social_media', 'content', 'email', 'sms', 'affiliate', 'influencer', 'display', 'search', 'organic']).default('organic'),
+  conversion_type: z.enum(['signup', 'purchase', 'lead', 'download', 'install', 'view', 'engagement']).default('signup'),
+  user_identifier: z.string().optional(),
+  device_id: z.string().optional(),
+  fingerprint: z.string().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  amount: z.number().positive().optional(),
+  currency: z.string().default('IDR'),
+  utms: z.object({
+    source: z.string().optional(),
+    medium: z.string().optional(),
+    campaign: z.string().optional(),
+    term: z.string().optional(),
+    content: z.string().optional(),
+  }).optional(),
+  metadata: z.record(z.unknown()).optional(),
+  // S2S specific
+  api_key: z.string().optional(),
+  timestamp: z.string().datetime().optional(),
+  signature: z.string().optional(),
+});
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -25,6 +62,17 @@ export async function GET(
   const { type } = await params;
   const { searchParams } = new URL(request.url);
 
+  // Check rate limit for all GET requests
+  const rateLimit = await checkPublicRateLimit(request, 'track');
+  if (!rateLimit.allowed) {
+    return createRateLimitResponse({
+      limit: rateLimit.limit,
+      remaining: rateLimit.remaining,
+      resetAt: rateLimit.resetAt,
+      type: 'tracking',
+    });
+  }
+
   if (type === 'pixel') {
     // Return 1x1 transparent GIF
     const pixel = Buffer.from(
@@ -34,21 +82,32 @@ export async function GET(
     return new NextResponse(pixel, {
       headers: {
         'Content-Type': 'image/gif',
-        'Cache-Control': 'no-store, no-cache',
+        'Cache-Control': 'no-store, no-cache, private',
+        'Pragma': 'no-cache',
+        'X-RateLimit-Limit': rateLimit.limit.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': rateLimit.resetAt.toString(),
       },
     });
   }
 
   if (type === 'validate') {
     const fingerprint = searchParams.get('fingerprint');
-    return NextResponse.json({ fingerprint, valid: true });
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || '';
+
+    return NextResponse.json({
+      fingerprint,
+      valid: true,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   if (type === 'stats') {
-    // Return tracking stats
+    // Return tracking stats (admin only in production)
     return NextResponse.json({
       clicks: clickStore.size,
       conversions: conversionStore.size,
+      status: 'operational',
     });
   }
 
@@ -63,17 +122,41 @@ export async function POST(
   const { type } = await params;
 
   try {
-    const body = await request.json();
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+    // Check rate limit
+    const rateLimitType = type === 'conversion' ? 'conversion' : 'click';
+    const rateLimit = await checkPublicRateLimit(request, rateLimitType);
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse({
+        limit: rateLimit.limit,
+        remaining: rateLimit.remaining,
+        resetAt: rateLimit.resetAt,
+        type: rateLimitType,
+      });
+    }
+
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || '';
+    const userAgent = request.headers.get('user-agent') || '';
 
     if (type === 'click') {
+      const body = await request.json();
       const id = generateId();
+
       const click = {
         id,
-        ...body,
+        partner_id: body.partner_id,
+        program_id: body.program_id,
+        fingerprint: body.fingerprint,
         ip,
+        user_agent: userAgent,
+        referrer: body.referrer,
+        utm_source: body.utm_source,
+        utm_medium: body.utm_medium,
+        utm_campaign: body.utm_campaign,
+        utm_term: body.utm_term,
+        utm_content: body.utm_content,
         timestamp: new Date().toISOString(),
       };
+
       clickStore.set(id, click);
 
       // Record to Supabase if configured
@@ -85,7 +168,7 @@ export async function POST(
             program_id: body.program_id,
             fingerprint: body.fingerprint,
             ip_address: ip,
-            user_agent: request.headers.get('user-agent') || undefined,
+            user_agent: userAgent,
             referrer: body.referrer,
             utm_source: body.utm_source,
             utm_medium: body.utm_medium,
@@ -96,35 +179,91 @@ export async function POST(
         }
       }
 
-      return NextResponse.json({ success: true, clickId: id });
+      return NextResponse.json(
+        { success: true, clickId: id },
+        {
+          headers: {
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': (rateLimit.remaining - 1).toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
+          },
+        }
+      );
     }
 
     if (type === 'conversion') {
-      const id = generateId();
+      const body = await request.json();
+
+      // Validate request body
+      const validationResult = s2sConversionSchema.safeParse(body);
+      if (!validationResult.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Validation failed',
+            details: validationResult.error.flatten(),
+          },
+          { status: 400 }
+        );
+      }
+
+      const data = validationResult.data;
+
+      // Verify S2S signature if provided
+      if (data.signature && data.api_key) {
+        const webhookSecret = process.env.S2S_WEBHOOK_SECRET || 'demo-s2s-secret';
+        const payloadStr = JSON.stringify({
+          program_id: data.program_id,
+          partner_id: data.partner_id,
+          event_id: data.event_id,
+          event_name: data.event_name,
+          conversion_type: data.conversion_type,
+          timestamp: data.timestamp,
+        });
+
+        const signatureResult = verifySignedWebhookPayload(
+          payloadStr,
+          data.signature,
+          webhookSecret
+        );
+
+        if (!signatureResult.valid) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Invalid signature',
+              message: 'S2S webhook signature verification failed',
+            },
+            { status: 401 }
+          );
+        }
+      }
 
       // Perform quick fraud check
       const fraudContext: ConversionContext = {
-        partner_id: body.partner_id,
-        program_id: body.program_id,
+        partner_id: data.partner_id,
+        program_id: data.program_id,
         ip_address: ip,
-        fingerprint: body.fingerprint,
-        email: body.email,
-        device_id: body.device_id,
-        user_agent: request.headers.get('user-agent') || undefined,
-        referrer: body.referrer,
+        fingerprint: data.fingerprint,
+        email: data.email,
+        device_id: data.device_id,
+        user_agent: userAgent,
         partner_fraud_rate: body.partner_fraud_rate,
       };
 
       const fraudResult = quickFraudCheck(fraudContext);
 
+      const id = generateId();
       const conversion = {
         id,
-        ...body,
+        ...data,
         ip,
+        user_agent: userAgent,
         timestamp: new Date().toISOString(),
         status: fraudResult.recommendation === 'reject' ? 'rejected' : 'pending',
         fraud_score: fraudResult.totalScore,
-        fraud_signals: fraudResult.signals.map(s => s.type),
+        fraud_signals: fraudResult.signals.map((s) => s.type),
+        fraud_reasons: fraudResult.reasons,
       };
 
       conversionStore.set(id, conversion);
@@ -134,38 +273,57 @@ export async function POST(
         try {
           await supabase.from('conversions').insert({
             id,
-            program_id: body.program_id,
-            partner_id: body.partner_id,
-            channel_type: body.channel_type,
-            conversion_type: body.conversion_type,
-            user_identifier: body.user_identifier,
+            program_id: data.program_id,
+            partner_id: data.partner_id,
+            channel_type: data.channel_type,
+            conversion_type: data.conversion_type,
+            user_identifier: data.user_identifier,
             ip_address: ip,
-            device_id: body.device_id,
-            fingerprint: body.fingerprint,
-            utms: body.utms || {},
+            device_id: data.device_id,
+            fingerprint: data.fingerprint,
+            utms: data.utms,
             status: fraudResult.recommendation === 'reject' ? 'fraud' : 'pending',
             fraud_score: fraudResult.totalScore,
-            fraud_signals: fraudResult.signals.map(s => s.type),
+            fraud_signals: fraudResult.signals.map((s) => s.type),
+            event_id: data.event_id,
+            event_data: data.metadata,
           });
         } catch (err) {
           console.error('Failed to record conversion to Supabase:', err);
         }
       }
 
-      return NextResponse.json({
-        success: true,
-        conversionId: id,
-        fraudCheck: {
-          score: fraudResult.totalScore,
-          recommendation: fraudResult.recommendation,
-          blocked: fraudResult.isBlocked,
+      return NextResponse.json(
+        {
+          success: true,
+          conversionId: id,
+          status: conversion.status,
+          fraudCheck: {
+            score: fraudResult.totalScore,
+            recommendation: fraudResult.recommendation,
+            blocked: fraudResult.isBlocked,
+            signals: fraudResult.signals.map((s) => ({
+              type: s.type,
+              score: s.score,
+            })),
+          },
         },
-      });
+        {
+          headers: {
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': (rateLimit.remaining - 1).toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
+          },
+        }
+      );
     }
 
     return NextResponse.json({ error: 'Unknown type' }, { status: 400 });
   } catch (error) {
     console.error('Track API error:', error);
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: 'Invalid request' },
+      { status: 400 }
+    );
   }
 }

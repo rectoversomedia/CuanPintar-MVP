@@ -22,10 +22,22 @@ export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 export { Textarea } from './ui/textarea';
 export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 export { Toast } from './ui/toast';
+export { Skeleton } from './ui/skeleton';
+export { StatsCard } from './ui/stats-card';
+export { PageHeader } from './ui/page-header';
+export { EmptyState } from './ui/empty-state';
+
+// NEW UI Components
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipWrapper } from './ui/tooltip';
+export { Pagination, PaginationInfo } from './ui/pagination';
+export { Calendar, DatePickerInput } from './ui/calendar';
+export { FileUpload, formatFileSize } from './ui/file-upload';
+export { QRCodeGenerator } from './ui/qr-code';
 
 // Layout Components
 export { Header } from './layout/header';
 export { Sidebar } from './layout/sidebar';
+export { DashboardLayout } from './layout/dashboard-layout';
 
 // Feature Components
 export { ThemeToggle, SimpleThemeToggle } from './theme-toggle';

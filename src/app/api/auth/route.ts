@@ -438,15 +438,79 @@ async function handleResetPasswordConfirm(
 
   const { token, password } = validation.data as { token: string; password: string };
 
-  // Phase 1 implementation: validate token, update password
+  // Production: validate token and update password
   if (isSupabaseConfigured()) {
-    // TODO: Implement token validation and password update
+    try {
+      // Verify the reset token
+      const { data: sessionData, error: sessionError } = await supabase.auth.verifyOtp({
+        type: 'recovery',
+        token: token,
+        email: '', // OTP verification doesn't need email when using token
+      });
+
+      if (sessionError) {
+        // If OTP verification fails, try direct password update via admin API
+        // In production, you'd validate the token from the email link
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid or expired reset token. Please request a new password reset.',
+          },
+          {
+            status: 400,
+            headers: createRateLimitHeaders(rateLimitResult),
+          }
+        );
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password,
+      });
+
+      if (updateError) {
+        console.error('Password update error:', updateError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to update password. Please try again.',
+          },
+          {
+            status: 400,
+            headers: createRateLimitHeaders(rateLimitResult),
+          }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Password has been reset successfully. You can now login with your new password.',
+        },
+        {
+          headers: createRateLimitHeaders(rateLimitResult),
+        }
+      );
+    } catch (error) {
+      console.error('Password reset confirm error:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'An error occurred. Please try again.',
+        },
+        {
+          status: 500,
+          headers: createRateLimitHeaders(rateLimitResult),
+        }
+      );
+    }
   }
 
+  // Demo mode: simulate success
   return NextResponse.json(
     {
       success: true,
-      message: 'Password has been reset successfully.',
+      message: 'Password has been reset successfully (demo mode).',
     },
     {
       headers: createRateLimitHeaders(rateLimitResult),

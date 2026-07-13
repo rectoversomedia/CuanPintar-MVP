@@ -1,18 +1,22 @@
 /**
- * Payout API Routes
+ * Payout API Routes - Protected
+ * Partners can view/create their own payouts
+ * Admins can manage all payouts
  *
  * Endpoints:
  * GET    /api/payouts             - List payouts
- * POST   /api/payouts             - Create payout request
- * PUT    /api/payouts/:id         - Update payout (approve/process)
- * GET    /api/payouts/stats        - Payout statistics
+ * POST   /api/payouts             - Create payout request (partner)
+ * PATCH  /api/payouts             - Update payout status (admin only)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { requireAuth, requireAdmin, requirePartner, successResponse, errorResponse } from '@/lib/auth/middleware';
+import { z } from 'zod';
 
-// In-memory storage
-const payouts = new Map<string, Payout>();
-const paymentMethods = new Map<string, PaymentMethod>();
+// In-memory storage for demo mode (should be replaced with database)
+const demoPayouts = new Map<string, Payout>();
+const demoPaymentMethods = new Map<string, PaymentMethod>();
 
 interface Payout {
   id: string;
@@ -50,7 +54,7 @@ interface PaymentMethod {
 const mockPayouts: Payout[] = [
   {
     id: 'payout_001',
-    partner_id: 'part_001',
+    partner_id: 'demo-part-001',
     partner_name: 'JakselNews Media Network',
     amount: 5250000,
     status: 'paid',
@@ -63,58 +67,32 @@ const mockPayouts: Payout[] = [
     created_at: '2024-05-25T10:00:00Z',
     transaction_id: 'TRX_BCA_001',
   },
-  {
-    id: 'payout_002',
-    partner_id: 'part_002',
-    partner_name: 'Finance Creator Jakarta',
-    amount: 3500000,
-    status: 'processing',
-    payment_method: 'bank_transfer',
-    bank_account: '9876543210',
-    bank_name: 'Mandiri',
-    account_holder: 'Budi Santoso',
-    approved_conversions: 140,
-    created_at: '2024-06-02T11:00:00Z',
-  },
-  {
-    id: 'payout_003',
-    partner_id: 'part_003',
-    partner_name: 'Parenting Community Indonesia',
-    amount: 2800000,
-    status: 'pending',
-    payment_method: 'gopay',
-    ewallet_number: '081234567890',
-    ewallet_type: 'gopay',
-    approved_conversions: 56,
-    created_at: '2024-06-03T10:00:00Z',
-  },
 ];
 
-mockPayouts.forEach(p => payouts.set(p.id, p));
+mockPayouts.forEach(p => demoPayouts.set(p.id, p));
 
-// Mock payment methods
-const mockPaymentMethods: PaymentMethod[] = [
-  {
-    id: 'pm_001',
-    partner_id: 'part_001',
-    type: 'bank_transfer',
-    bank_name: 'BCA',
-    account_number: '1234567890',
-    account_holder: 'PT JakselNews Media',
-    is_default: true,
-    verified: true,
-  },
-  {
-    id: 'pm_002',
-    partner_id: 'part_001',
-    type: 'gopay',
-    ewallet_number: '081234567890',
-    is_default: false,
-    verified: true,
-  },
-];
+// Validation schemas
+const createPayoutSchema = z.object({
+  amount: z.number().positive('Amount must be positive'),
+  payment_method_id: z.string().optional(),
+  notes: z.string().max(500).optional(),
+});
 
-mockPaymentMethods.forEach(pm => paymentMethods.set(pm.id, pm));
+const updatePayoutSchema = z.object({
+  payout_id: z.string().min(1),
+  action: z.enum(['approve', 'process', 'reject', 'fail']),
+  notes: z.string().max(500).optional(),
+  transaction_id: z.string().optional(),
+});
+
+const listPayoutsSchema = z.object({
+  status: z.enum(['pending', 'processing', 'paid', 'failed', 'rejected']).optional(),
+  partner_id: z.string().optional(),
+  date_from: z.string().datetime().optional(),
+  date_to: z.string().datetime().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
 
 function generateId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -122,165 +100,320 @@ function generateId(prefix: string): string {
 
 // GET /api/payouts
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  try {
+    const authResult = await requireAuth(request);
+    if (!authResult.success) return authResult.response;
 
-  const status = searchParams.get('status');
-  const partnerId = searchParams.get('partner_id');
-  const dateFrom = searchParams.get('date_from');
-  const dateTo = searchParams.get('date_to');
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '20');
+    const user = authResult.user;
+    const { searchParams } = new URL(request.url);
 
-  let result = Array.from(payouts.values());
+    // Validate query params
+    const queryResult = listPayoutsSchema.safeParse(Object.fromEntries(searchParams));
+    if (!queryResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: queryResult.error.flatten() },
+        { status: 400 }
+      );
+    }
 
-  // Filters
-  if (status) result = result.filter(p => p.status === status);
-  if (partnerId) result = result.filter(p => p.partner_id === partnerId);
-  if (dateFrom) result = result.filter(p => p.created_at >= dateFrom);
-  if (dateTo) result = result.filter(p => p.created_at <= dateTo);
+    const { status, date_from, date_to, page, limit } = queryResult.data;
 
-  // Sort by date
-  result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    // Partners can only see their own payouts
+    let partnerIdFilter = queryResult.data.partner_id;
+    if (user.role === 'partner' && user.partnerId) {
+      partnerIdFilter = user.partnerId;
+    }
 
-  // Stats
-  const stats = {
-    totalPayouts: result.length,
-    pendingAmount: result.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0),
-    processingAmount: result.filter(p => p.status === 'processing').reduce((sum, p) => sum + p.amount, 0),
-    paidAmount: result.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0),
-    totalPaid: result.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0),
-  };
+    // Use Supabase if configured
+    if (isSupabaseConfigured()) {
+      let query = supabase
+        .from('payouts')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
 
-  // Pagination
-  const total = result.length;
-  const start = (page - 1) * limit;
-  const paginatedResult = result.slice(start, start + limit);
+      if (status) query = query.eq('status', status);
+      if (partnerIdFilter) query = query.eq('partner_id', partnerIdFilter);
+      if (date_from) query = query.gte('created_at', date_from);
+      if (date_to) query = query.lte('created_at', date_to);
 
-  return NextResponse.json({
-    success: true,
-    data: paginatedResult,
-    stats,
-    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-  });
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      // Calculate stats
+      const stats = {
+        totalPayouts: count || 0,
+        pendingAmount: (data || []).filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0),
+        processingAmount: (data || []).filter(p => p.status === 'processing').reduce((sum, p) => sum + p.amount, 0),
+        paidAmount: (data || []).filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0),
+      };
+
+      return NextResponse.json({
+        success: true,
+        data: data || [],
+        stats,
+        pagination: {
+          page,
+          limit,
+          total: count || 0,
+          totalPages: Math.ceil((count || 0) / limit),
+        },
+      });
+    }
+
+    // Demo mode
+    let result = Array.from(demoPayouts.values());
+
+    if (status) result = result.filter(p => p.status === status);
+    if (partnerIdFilter) result = result.filter(p => p.partner_id === partnerIdFilter);
+    if (date_from) result = result.filter(p => p.created_at >= date_from);
+    if (date_to) result = result.filter(p => p.created_at <= date_to);
+
+    // Partners can only see their own payouts
+    if (user.role === 'partner' && user.partnerId) {
+      result = result.filter(p => p.partner_id === user.partnerId);
+    }
+
+    result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Stats
+    const stats = {
+      totalPayouts: result.length,
+      pendingAmount: result.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0),
+      processingAmount: result.filter(p => p.status === 'processing').reduce((sum, p) => sum + p.amount, 0),
+      paidAmount: result.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0),
+    };
+
+    const total = result.length;
+    const start = (page - 1) * limit;
+    const paginatedResult = result.slice(start, start + limit);
+
+    return NextResponse.json({
+      success: true,
+      data: paginatedResult,
+      stats,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error('List payouts error:', error);
+    return errorResponse('Internal error', 'Failed to fetch payouts', 500);
+  }
 }
 
 // POST /api/payouts - Create payout request
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requirePartner(request);
+    if (!authResult.success) return authResult.response;
+
+    const user = authResult.user;
     const body = await request.json();
 
+    // Validate body
+    const parseResult = createPayoutSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Validation Error', details: parseResult.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const data = parseResult.data;
+
+    // In production, verify partner has sufficient balance
+    // For now, we'll skip balance check in demo mode
+
     // Get partner's payment method
-    const methods = Array.from(paymentMethods.values())
-      .filter(pm => pm.partner_id === body.partner_id && pm.is_default);
+    let paymentMethod: PaymentMethod | null = null;
 
-    const method = methods[0];
+    if (isSupabaseConfigured()) {
+      // Fetch from database
+      const { data: pm } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('partner_id', user.partnerId)
+        .eq('is_default', true)
+        .single();
 
-    if (!method) {
-      return NextResponse.json({
-        success: false,
-        error: 'No payment method configured. Please add a payment method first.',
-      }, { status: 400 });
+      paymentMethod = pm;
+    } else {
+      // Demo mode - find any payment method for partner
+      const methods = Array.from(demoPaymentMethods.values())
+        .find(pm => pm.partner_id === user.partnerId && pm.is_default);
+
+      // Use default if none set
+      if (!methods) {
+        paymentMethod = {
+          id: 'pm_default',
+          partner_id: user.partnerId!,
+          type: 'bank_transfer',
+          bank_name: 'BCA',
+          account_number: '1234567890',
+          account_holder: user.email,
+          is_default: true,
+          verified: true,
+        };
+      } else {
+        paymentMethod = methods;
+      }
+    }
+
+    if (!paymentMethod) {
+      return errorResponse('Payment method required', 'Please add a payment method first', 400);
     }
 
     const payout: Payout = {
       id: generateId('payout'),
-      partner_id: body.partner_id,
-      partner_name: body.partner_name,
-      amount: body.amount,
+      partner_id: user.partnerId!,
+      partner_name: user.email,
+      amount: data.amount,
       status: 'pending',
-      payment_method: method.type,
-      bank_account: method.account_number,
-      bank_name: method.bank_name,
-      account_holder: method.account_holder,
-      ewallet_number: method.ewallet_number,
-      ewallet_type: method.type,
-      approved_conversions: body.approved_conversions || 0,
+      payment_method: paymentMethod.type,
+      bank_account: paymentMethod.account_number,
+      bank_name: paymentMethod.bank_name,
+      account_holder: paymentMethod.account_holder,
+      ewallet_number: paymentMethod.ewallet_number,
+      ewallet_type: paymentMethod.type,
+      approved_conversions: 0,
       created_at: new Date().toISOString(),
+      notes: data.notes,
     };
 
-    payouts.set(payout.id, payout);
+    // Store payout
+    if (isSupabaseConfigured()) {
+      const { data: savedPayout, error } = await supabase
+        .from('payouts')
+        .insert({
+          partner_id: payout.partner_id,
+          partner_name: payout.partner_name,
+          amount: payout.amount,
+          status: payout.status,
+          payment_method: payout.payment_method,
+          bank_account: payout.bank_account,
+          bank_name: payout.bank_name,
+          account_holder: payout.account_holder,
+          ewallet_number: payout.ewallet_number,
+          ewallet_type: payout.ewallet_type,
+          notes: payout.notes,
+        })
+        .select()
+        .single();
 
-    // In production, this would trigger:
-    // 1. Email notification to partner
-    // 2. Webhook to payment gateway
-    // 3. SMS notification
+      if (error) throw error;
+      return successResponse(savedPayout, 'Payout request submitted', 201);
+    }
 
-    return NextResponse.json({
-      success: true,
-      data: payout,
-      message: 'Payout request submitted successfully',
-    }, { status: 201 });
+    // Demo mode
+    demoPayouts.set(payout.id, payout);
+    return successResponse(payout, 'Payout request submitted (demo mode)', 201);
 
   } catch (error) {
     console.error('Create payout error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to create payout request',
-    }, { status: 400 });
+    return errorResponse('Internal error', 'Failed to create payout', 500);
   }
 }
 
-// PATCH /api/payouts - Update payout status
+// PATCH /api/payouts - Update payout status (admin only)
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { payout_id, action, notes } = body;
+    // Require admin role
+    const authResult = await requireAdmin(request);
+    if (!authResult.success) return authResult.response;
 
-    const payout = payouts.get(payout_id);
+    const body = await request.json();
+
+    // Validate body
+    const parseResult = updatePayoutSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: 'Validation Error', details: parseResult.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { payout_id, action, notes, transaction_id } = parseResult.data;
+
+    // Use Supabase if configured
+    if (isSupabaseConfigured()) {
+      // Fetch current payout
+      const { data: existing, error: fetchError } = await supabase
+        .from('payouts')
+        .select('*')
+        .eq('id', payout_id)
+        .single();
+
+      if (fetchError || !existing) {
+        return errorResponse('Not found', 'Payout not found', 404);
+      }
+
+      // Build update
+      const updates: Partial<Payout> = {
+        processed_at: new Date().toISOString(),
+      };
+
+      switch (action) {
+        case 'approve':
+          updates.status = 'processing';
+          break;
+        case 'process':
+          updates.status = 'paid';
+          updates.paid_at = new Date().toISOString();
+          updates.transaction_id = transaction_id || `TRX_${Date.now()}`;
+          break;
+        case 'reject':
+          updates.status = 'rejected';
+          updates.notes = notes;
+          break;
+        case 'fail':
+          updates.status = 'failed';
+          updates.notes = notes || 'Payment failed';
+          break;
+      }
+
+      const { data: updated, error: updateError } = await supabase
+        .from('payouts')
+        .update(updates)
+        .eq('id', payout_id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      return successResponse(updated, `Payout ${action}d successfully`);
+    }
+
+    // Demo mode
+    const payout = demoPayouts.get(payout_id);
     if (!payout) {
-      return NextResponse.json({
-        success: false,
-        error: 'Payout not found',
-      }, { status: 404 });
+      return errorResponse('Not found', 'Payout not found', 404);
     }
 
     switch (action) {
       case 'approve':
         payout.status = 'processing';
         payout.processed_at = new Date().toISOString();
-        // In production: trigger payment gateway
         break;
-
       case 'process':
-        // Simulate payment processing
         payout.status = 'paid';
         payout.paid_at = new Date().toISOString();
-        payout.transaction_id = `TRX_${payout.payment_method}_${Date.now()}`;
+        payout.transaction_id = transaction_id || `TRX_${Date.now()}`;
         break;
-
       case 'reject':
         payout.status = 'rejected';
         payout.notes = notes;
         break;
-
       case 'fail':
         payout.status = 'failed';
         payout.notes = notes || 'Payment failed';
         break;
-
-      default:
-        return NextResponse.json({
-          success: false,
-          error: 'Invalid action',
-        }, { status: 400 });
     }
 
-    payouts.set(payout_id, payout);
-
-    // In production, trigger webhooks and notifications
-    // await triggerWebhook('payout.updated', payout);
-
-    return NextResponse.json({
-      success: true,
-      data: payout,
-      message: `Payout ${action}d successfully`,
-    });
+    demoPayouts.set(payout_id, payout);
+    return successResponse(payout, `Payout ${action}d successfully (demo mode)`);
 
   } catch (error) {
     console.error('Update payout error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to update payout',
-    }, { status: 400 });
+    return errorResponse('Internal error', 'Failed to update payout', 500);
   }
 }

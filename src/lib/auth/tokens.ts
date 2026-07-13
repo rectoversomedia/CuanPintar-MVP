@@ -94,8 +94,12 @@ export function blacklistToken(jti: string): void {
 function getJWTSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
-    // Fallback for development (NOT for production)
-    console.warn('JWT_SECRET not set, using development fallback');
+    // Fail hard in production - no fallback secrets allowed
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: JWT_SECRET environment variable is not set. Please configure it before deploying.');
+    }
+    // Only for development - warn and use fallback
+    console.warn('⚠️ JWT_SECRET not set, using development fallback. DO NOT use in production!');
     return 'cuanpintar-dev-secret-change-in-production';
   }
   return secret;

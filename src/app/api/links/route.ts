@@ -1,24 +1,36 @@
 /**
- * Links API Routes
+ * Links API Routes - Protected
+ * Partners can only access their own links
  *
  * Endpoints:
- * GET /api/links - List partner's tracking links
- * POST /api/links - Create new tracking link
+ * GET    /api/links             - List partner's tracking links
+ * POST   /api/links             - Create new tracking link
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { requirePartnerOrAdmin, requirePartner, successResponse, errorResponse } from '@/lib/auth/middleware';
 import { z } from 'zod';
 
 // Validation schema for creating a link
 const createLinkSchema = z.object({
-  program_id: z.string().uuid('Invalid program ID'),
-  channel_type: z.string().min(1, 'Channel type is required'),
-  title: z.string().min(1, 'Title is required').max(255).optional(),
+  program_id: z.string().min(1, 'Program ID is required'),
+  channel_type: z.enum(['social_media', 'content', 'email', 'sms', 'affiliate', 'influencer', 'display', 'search', 'organic']).default('organic'),
+  title: z.string().min(1).max(255).optional(),
   description: z.string().max(1000).optional(),
-  utm_source: z.string().optional(),
-  utm_medium: z.string().optional(),
-  utm_campaign: z.string().optional(),
+  utm_source: z.string().max(100).optional(),
+  utm_medium: z.string().max(100).optional(),
+  utm_campaign: z.string().max(100).optional(),
+  utm_term: z.string().max(100).optional(),
+  utm_content: z.string().max(100).optional(),
+});
+
+const listLinksSchema = z.object({
+  program_id: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'expired']).optional(),
+  search: z.string().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 // Demo mode in-memory storage
@@ -67,169 +79,175 @@ function buildTrackingUrl(
   programId: string,
   partnerId: string,
   channel: string,
-  utms?: { source?: string; medium?: string; campaign?: string }
+  utms?: { source?: string; medium?: string; campaign?: string; term?: string; content?: string }
 ): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://cuanpintar.com';
-  let url = `${baseUrl}/track/${programId}/${partnerId}?ch=${channel}`;
+  const params = new URLSearchParams({
+    ch: channel,
+    pid: partnerId,
+  });
 
-  const params = new URLSearchParams();
   if (utms?.source) params.set('utm_source', utms.source);
   if (utms?.medium) params.set('utm_medium', utms.medium);
   if (utms?.campaign) params.set('utm_campaign', utms.campaign);
+  if (utms?.term) params.set('utm_term', utms.term);
+  if (utms?.content) params.set('utm_content', utms.content);
 
-  const queryString = params.toString();
-  if (queryString) {
-    url += '&' + queryString;
-  }
-
-  return url;
+  return `${baseUrl}/track/${programId}?${params.toString()}`;
 }
 
 // GET /api/links - List tracking links
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if (!authResult.success) return authResult.response;
+
+    const user = authResult.user;
     const { searchParams } = new URL(request.url);
-    const partnerId = searchParams.get('partner_id');
-    const programId = searchParams.get('program_id');
-    const status = searchParams.get('status'); // active, inactive, expired
-    const search = searchParams.get('search');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
 
-    // Demo mode
-    if (!isSupabaseConfigured() || !partnerId) {
-      // Return demo data
-      const allLinks = Array.from(demoLinks.values());
+    const queryResult = listLinksSchema.safeParse(Object.fromEntries(searchParams));
+    if (!queryResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: queryResult.error.flatten() },
+        { status: 400 }
+      );
+    }
 
-      // Filter by partner_id if provided
-      const filtered = partnerId
-        ? allLinks.filter((l) => l.partner_id === partnerId)
-        : allLinks;
+    const { program_id, status, search, page, limit } = queryResult.data;
+
+    // Partners can only see their own links
+    const partnerId = user.role === 'partner' && user.partnerId ? user.partnerId : undefined;
+
+    // Use Supabase if configured
+    if (isSupabaseConfigured()) {
+      let query = supabase
+        .from('tracking_links')
+        .select(`
+          *,
+          program:programs(id, name, brand_name, payout_model, payout_amount)
+        `, { count: 'exact' });
+
+      // Filter by partner if not admin
+      if (partnerId) {
+        query = query.eq('partner_id', partnerId);
+      }
+
+      if (program_id) query = query.eq('program_id', program_id);
+
+      if (status === 'active') {
+        query = query.eq('is_active', true);
+      } else if (status === 'inactive') {
+        query = query.eq('is_active', false);
+      } else if (status === 'expired') {
+        query = query.lte('expires_at', new Date().toISOString());
+      }
+
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,unique_code.ilike.%${search}%`);
+      }
+
+      query = query.range((page - 1) * limit, page * limit - 1);
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Links query error:', error);
+        return errorResponse('Database error', error.message, 500);
+      }
+
+      // Calculate summary stats
+      const summary = {
+        total_links: data?.length || 0,
+        total_clicks: data?.reduce((sum, l) => sum + (l.total_clicks || 0), 0) || 0,
+        total_conversions: data?.reduce((sum, l) => sum + (l.total_conversions || 0), 0) || 0,
+        total_payout: data?.reduce((sum, l) => sum + parseFloat(l.total_payout || '0'), 0) || 0,
+      };
 
       return NextResponse.json({
         success: true,
-        data: filtered,
+        data: data || [],
+        summary,
         pagination: {
           page,
           limit,
-          total: filtered.length,
-          totalPages: Math.ceil(filtered.length / limit),
+          total: count || 0,
+          totalPages: Math.ceil((count || 0) / limit),
         },
       });
     }
 
-    // Production mode
-    let query = supabase
-      .from('tracking_links')
-      .select(`
-        *,
-        program:programs(id, name, brand_name, payout_model, payout_amount)
-      `)
-      .eq('partner_id', partnerId);
+    // Demo mode
+    let result = Array.from(demoLinks.values());
 
-    // Apply filters
-    if (programId) {
-      query = query.eq('program_id', programId);
+    // Filter by partner if not admin
+    if (partnerId) {
+      result = result.filter(l => l.partner_id === partnerId);
     }
 
-    if (status === 'active') {
-      query = query.eq('is_active', true);
-    } else if (status === 'inactive') {
-      query = query.eq('is_active', false);
-    } else if (status === 'expired') {
-      query = query.lte('expires_at', new Date().toISOString());
-    }
+    if (program_id) result = result.filter(l => l.program_id === program_id);
+    if (status === 'active') result = result.filter(l => l.is_active);
+    if (status === 'inactive') result = result.filter(l => !l.is_active);
+    if (search) result = result.filter(l =>
+      l.title.toLowerCase().includes(search.toLowerCase()) ||
+      l.unique_code.toLowerCase().includes(search.toLowerCase())
+    );
 
-    if (search) {
-      query = query.or(
-        `title.ilike.%${search}%,unique_code.ilike.%${search}%`
-      );
-    }
-
-    // Pagination
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-    query = query.range(from, to).order('created_at', { ascending: false });
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching links:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch links' },
-        { status: 500 }
-      );
-    }
-
-    // Calculate summary stats
     const summary = {
-      total_links: data?.length || 0,
-      total_clicks: data?.reduce((sum, l) => sum + (l.total_clicks || 0), 0) || 0,
-      total_conversions:
-        data?.reduce((sum, l) => sum + (l.total_conversions || 0), 0) || 0,
-      total_payout:
-        data?.reduce((sum, l) => sum + parseFloat(l.total_payout || '0'), 0) || 0,
+      total_links: result.length,
+      total_clicks: result.reduce((sum, l) => sum + l.total_clicks, 0),
+      total_conversions: result.reduce((sum, l) => sum + l.total_conversions, 0),
+      total_payout: result.reduce((sum, l) => sum + l.total_payout, 0),
     };
+
+    const total = result.length;
+    const start = (page - 1) * limit;
+    const paginated = result.slice(start, start + limit);
 
     return NextResponse.json({
       success: true,
-      data: data || [],
+      data: paginated,
       summary,
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
-      },
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {
     console.error('Links GET error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return errorResponse('Internal error', 'Failed to fetch links', 500);
   }
 }
 
 // POST /api/links - Create new tracking link
 export async function POST(request: NextRequest) {
   try {
+    // Require partner role
+    const authResult = await requirePartner(request);
+    if (!authResult.success) return authResult.response;
+
+    const user = authResult.user;
     const body = await request.json();
 
-    // Validate input
-    const validation = createLinkSchema.safeParse(body);
-    if (!validation.success) {
+    const parseResult = createLinkSchema.safeParse(body);
+    if (!parseResult.success) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: validation.error.flatten().fieldErrors,
-        },
+        { error: 'Validation Error', details: parseResult.error.flatten() },
         { status: 400 }
       );
     }
 
-    const { program_id, channel_type, title, description, utm_source, utm_medium, utm_campaign } =
-      validation.data;
-
-    // Get partner_id from header or body (in real app, this would come from auth)
-    const partnerId = request.headers.get('x-partner-id') || body.partner_id;
-
-    if (!partnerId) {
-      return NextResponse.json(
-        { success: false, error: 'Partner ID is required' },
-        { status: 400 }
-      );
-    }
+    const data = parseResult.data;
+    const partnerId = user.partnerId!;
 
     // Generate unique code
     const uniqueCode = generateShortCode();
 
     // Build tracking URL
-    const trackingUrl = buildTrackingUrl(program_id, partnerId, channel_type, {
-      source: utm_source,
-      medium: utm_medium,
-      campaign: utm_campaign,
+    const trackingUrl = buildTrackingUrl(data.program_id, partnerId, data.channel_type, {
+      source: data.utm_source,
+      medium: data.utm_medium,
+      campaign: data.utm_campaign,
+      term: data.utm_term,
+      content: data.utm_content,
     });
 
     // Build short URL
@@ -242,13 +260,13 @@ export async function POST(request: NextRequest) {
       const newLink: LinkData = {
         id: linkId,
         partner_id: partnerId,
-        program_id,
-        channel_type,
+        program_id: data.program_id,
+        channel_type: data.channel_type,
         unique_code: uniqueCode,
         tracking_url: trackingUrl,
         short_url: shortUrl,
-        title: title || `${channel_type} - ${new Date().toLocaleDateString()}`,
-        description: description || '',
+        title: data.title || `${data.channel_type} - ${new Date().toLocaleDateString()}`,
+        description: data.description || '',
         total_clicks: 0,
         total_conversions: 0,
         valid_conversions: 0,
@@ -264,28 +282,25 @@ export async function POST(request: NextRequest) {
 
       demoLinks.set(linkId, newLink);
 
-      return NextResponse.json(
-        {
-          success: true,
-          data: newLink,
-          message: 'Link created successfully',
-        },
-        { status: 201 }
-      );
+      return NextResponse.json({
+        success: true,
+        data: newLink,
+        message: 'Link created successfully',
+      }, { status: 201 });
     }
 
-    // Production mode - Insert into Supabase
-    const { data, error } = await supabase
+    // Production mode
+    const { data: link, error } = await supabase
       .from('tracking_links')
       .insert({
         partner_id: partnerId,
-        program_id,
-        channel_type,
+        program_id: data.program_id,
+        channel_type: data.channel_type,
         unique_code: uniqueCode,
         tracking_url: trackingUrl,
         short_url: shortUrl,
-        title: title || `${channel_type} - ${new Date().toLocaleDateString()}`,
-        description,
+        title: data.title || `${data.channel_type} - ${new Date().toLocaleDateString()}`,
+        description: data.description,
       })
       .select(`
         *,
@@ -294,38 +309,18 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating link:', error);
+      console.error('Link insert error:', error);
 
-      // Handle unique constraint violation
       if (error.code === '23505') {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'A link for this program and channel already exists',
-          },
-          { status: 409 }
-        );
+        return errorResponse('Conflict', 'A link for this program and channel already exists', 409);
       }
 
-      return NextResponse.json(
-        { success: false, error: 'Failed to create link' },
-        { status: 500 }
-      );
+      return errorResponse('Database error', error.message, 500);
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        data,
-        message: 'Link created successfully',
-      },
-      { status: 201 }
-    );
+    return successResponse(link, 'Link created successfully', 201);
   } catch (error) {
     console.error('Links POST error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return errorResponse('Internal error', 'Failed to create link', 500);
   }
 }
