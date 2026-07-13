@@ -57,6 +57,12 @@ export default function LoginPage() {
     localStorage.setItem('cp_user', JSON.stringify(user));
     localStorage.setItem('cp_session', JSON.stringify({ demo: true, role: selectedRole, userId: user?.id }));
 
+    // Set cookie for middleware auth check
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 7);
+    document.cookie = `cp_access_token=${user?.email}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+    document.cookie = `cp_user_role=${selectedRole}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+
     await new Promise(resolve => setTimeout(resolve, 500));
     router.push(`/${selectedRole}`);
   };

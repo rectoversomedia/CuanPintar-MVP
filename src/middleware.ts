@@ -74,8 +74,13 @@ export async function middleware(request: NextRequest) {
 
   // Production mode - require auth
   const authHeader = request.headers.get('Authorization');
+  const demoToken = request.cookies.get('cp_access_token')?.value;
+  const demoSession = request.cookies.get('cp_session')?.value;
   const cookieToken = request.cookies.get('auth_token')?.value;
-  const token = cookieToken || (authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null);
+
+  // Accept demo cookies as valid auth
+  const token = demoToken || demoSession || cookieToken ||
+                 (authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null);
 
   if (!token) {
     const loginUrl = new URL('/login', request.url);
