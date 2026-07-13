@@ -109,11 +109,11 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     >
       {/* Logo */}
       <div className={cn(
-        'h-14 flex items-center border-b border-white/10',
-        collapsed ? 'justify-center px-2' : 'px-4'
+        'h-14 flex items-center justify-center border-b border-white/10',
+        collapsed ? 'px-2' : 'px-4'
       )}>
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 relative">
+          <div className="w-10 h-10 relative">
             <Image
               src="/logo.png"
               alt="CuanPintar"
@@ -122,9 +122,6 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               unoptimized
             />
           </div>
-          {!collapsed && (
-            <span className="text-lg font-bold text-white">CuanPintar</span>
-          )}
         </Link>
       </div>
 

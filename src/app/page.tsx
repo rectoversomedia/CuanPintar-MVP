@@ -133,7 +133,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 relative">
+              <div className="w-10 h-10 relative">
                 <Image
                   src="/logo.png"
                   alt="CuanPintar"
@@ -142,9 +142,6 @@ export default function HomePage() {
                   unoptimized
                 />
               </div>
-              <span className="text-xl font-bold text-[var(--foreground)] tracking-tight">
-                CuanPintar
-              </span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-8">
@@ -517,7 +514,7 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 relative">
+                <div className="w-10 h-10 relative">
                   <Image
                     src="/logo.png"
                     alt="CuanPintar"
