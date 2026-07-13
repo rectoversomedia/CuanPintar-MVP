@@ -1,188 +1,216 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Filter, TrendingUp, Users, Target, Clock, DollarSign, MapPin, Star, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Search, ArrowRight, TrendingUp, Users, DollarSign, Target, Star } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { mockPrograms, mockPartners, formatCurrency } from '@/lib/mock-data';
-import { getStatusColor, getObjectiveLabel, getChannelLabel, getRiskColor } from '@/lib/utils';
+import { formatCurrency } from '@/lib/mock-data';
 
-export default function PartnerMarketplacePage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+interface Program {
+  id: string;
+  name: string;
+  brand_name: string;
+  industry: string;
+  description: string;
+  status: string;
+  budget: number;
+  payout_model: string;
+  partner_payout: number;
+  target_volume: number;
+}
 
-  const filteredPrograms = mockPrograms.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.advertiser_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || p.industry === categoryFilter;
-    return matchesSearch && matchesCategory;
+export default function PartnerDashboard() {
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [stats, setStats] = useState({
+    total_programs: 0,
+    earnings: 0,
+    conversions: 0,
+    quality_score: 85,
   });
 
-  const industries = [...new Set(mockPrograms.map(p => p.industry))];
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/programs');
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        setPrograms(data.data);
+        setStats({
+          total_programs: data.data.length,
+          earnings: 2500000,
+          conversions: 150,
+          quality_score: 92,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPrograms = programs.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.brand_name.toLowerCase().includes(search.toLowerCase()) ||
+    p.industry.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'paused': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+    <div className="space-y-6">
+      {/* Welcome */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Partner Dashboard</h1>
+        <p className="text-gray-500">Discover programs and track your earnings</p>
+      </div>
 
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-[260px]'}`}>
-        <Header title="Partner Marketplace" subtitle="Discover programs that match your audience" />
-
-        <main className="p-6">
-          {/* Search & Filters */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-initial">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search programs..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-full sm:w-80"
-                />
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Target className="w-5 h-5 text-blue-600" />
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Industries</SelectItem>
-                  {industries.map((industry) => (
-                    <SelectItem key={industry} value={industry}>{industry}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div>
+                <p className="text-sm text-gray-500">Available Programs</p>
+                <p className="text-xl font-bold">{loading ? '...' : stats.total_programs}</p>
+              </div>
             </div>
-          </div>
-
-          {/* Featured Programs */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Featured Programs</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredPrograms.slice(0, 3).map((program) => (
-                <Card key={program.id} className="card-hover border-blue-200 bg-gradient-to-br from-blue-50 to-white">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
-                          {program.brand_name.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{program.name}</h3>
-                          <p className="text-sm text-gray-500">{program.advertiser_name}</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-blue-600">Featured</Badge>
-                    </div>
-
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Payout</span>
-                        <span className="font-semibold text-green-600">
-                          {formatCurrency(program.payout_amount)} / {program.payout_model}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Objective</span>
-                        <div className="flex gap-1">
-                          {program.objectives.slice(0, 2).map((obj) => (
-                            <Badge key={obj} variant="secondary" className="text-xs">
-                              {getObjectiveLabel(obj)}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Industry</span>
-                        <span className="text-gray-700">{program.industry}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Channels</span>
-                        <div className="flex gap-1">
-                          {program.channels.slice(0, 3).map((ch) => (
-                            <span key={ch.channel_type} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {getChannelLabel(ch.channel_type)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Link href={`/partner/programs/${program.id}`}>
-                      <Button className="w-full">
-                        View Details
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Total Earnings</p>
+                <p className="text-xl font-bold">{loading ? '...' : formatCurrency(stats.earnings)}</p>
+              </div>
             </div>
-          </div>
-
-          {/* All Programs */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">All Available Programs ({filteredPrograms.length})</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredPrograms.map((program) => (
-                <Card key={program.id} className="card-hover">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center font-bold">
-                          {program.brand_name.charAt(0)}
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">{program.name}</h3>
-                          <p className="text-sm text-gray-500">{program.advertiser_name}</p>
-                        </div>
-                      </div>
-                      <Badge className={getStatusColor(program.status)}>
-                        {program.status}
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Payout</span>
-                        <span className="font-semibold text-gray-900">
-                          {formatCurrency(program.payout_amount)} / {program.payout_model}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Industry</span>
-                        <span className="text-gray-700">{program.industry}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Link href={`/partner/programs/${program.id}`} className="flex-1">
-                        <Button variant="outline" className="w-full">
-                          Details
-                        </Button>
-                      </Link>
-                      <Button className="flex-1">
-                        Join Program
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Conversions</p>
+                <p className="text-xl font-bold">{loading ? '...' : stats.conversions}</p>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                <Star className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Quality Score</p>
+                <p className="text-xl font-bold">{loading ? '...' : stats.quality_score}%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Input
+          placeholder="Search programs..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Programs Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {loading ? (
+          <div className="col-span-full text-center py-12 text-gray-500">Loading programs...</div>
+        ) : filteredPrograms.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <p className="text-gray-500 mb-4">No programs found</p>
+            {search && (
+              <Button variant="outline" onClick={() => setSearch('')}>
+                Clear Search
+              </Button>
+            )}
           </div>
-        </main>
+        ) : (
+          filteredPrograms.map((program) => (
+            <Card key={program.id} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                      {program.brand_name?.charAt(0) || 'P'}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{program.name}</h3>
+                      <p className="text-sm text-gray-500">{program.brand_name}</p>
+                    </div>
+                  </div>
+                  <Badge className={getStatusColor(program.status)}>
+                    {program.status}
+                  </Badge>
+                </div>
+
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                  {program.description || `Program untuk industri ${program.industry}`}
+                </p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Payout Model</span>
+                    <span className="font-medium">{program.payout_model}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Payout Amount</span>
+                    <span className="font-semibold text-green-600">
+                      {formatCurrency(program.partner_payout || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Industry</span>
+                    <span className="font-medium">{program.industry}</span>
+                  </div>
+                </div>
+
+                <Link href={`/partner/programs/${program.id}`}>
+                  <Button className="w-full gap-2">
+                    View Details
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
