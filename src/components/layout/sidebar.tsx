@@ -115,7 +115,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 relative">
             <Image
-              src="/Logo CuanPintar.png"
+              src="/logo.png"
               alt="CuanPintar"
               fill
               className="object-contain"
