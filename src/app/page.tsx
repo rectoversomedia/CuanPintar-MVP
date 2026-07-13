@@ -2,6 +2,7 @@
 
 import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRef } from 'react';
 import {
   ArrowRight,
@@ -132,10 +133,16 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
-                <span className="text-white font-bold text-lg">C</span>
+              <div className="w-9 h-9 relative">
+                <Image
+                  src="/logo.png"
+                  alt="CuanPintar"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
-              <span className="text-xl font-bold text-[var(--foreground)] tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
+              <span className="text-xl font-bold text-[var(--foreground)] tracking-tight">
                 CuanPintar
               </span>
             </Link>
@@ -510,8 +517,14 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">C</span>
+                <div className="w-9 h-9 relative">
+                  <Image
+                    src="/logo.png"
+                    alt="CuanPintar"
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
                 </div>
                 <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>
                   CuanPintar
