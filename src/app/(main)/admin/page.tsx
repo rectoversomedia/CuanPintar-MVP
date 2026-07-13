@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mockAdminDashboard, mockAdvertisers, mockPartners, mockPrograms, mockConversions, formatCurrency, formatNumber } from '@/lib/mock-data';
+import { cn } from '@/lib/utils';
 
 // Using CSS variables from globals.css for consistent theming
 // Primary: #6366F1 (Indigo), Secondary: #8B5CF6 (Purple)
@@ -81,9 +82,9 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-[var(--background-secondary)]">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-[68px]' : 'ml-[220px]'}`}>
+      <div className={cn('transition-all duration-300', sidebarCollapsed ? 'ml-[68px]' : 'ml-[220px]')}>
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)] px-6 py-3">
+        <header className="sticky top-0 z-30 bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)] px-5 py-3">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg font-bold text-[var(--foreground)]">Admin Overview</h1>
