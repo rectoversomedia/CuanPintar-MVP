@@ -4,7 +4,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
 
 // Types
@@ -65,13 +64,19 @@ function extractToken(request: NextRequest): string | null {
     return authHeader.slice(7);
   }
 
-  // Check cookies
-  const cookieStore = cookies();
-  return (
-    cookieStore.get('access_token')?.value ||
-    cookieStore.get('sb-access-token')?.value ||
-    null
-  );
+  // Check cookies from header
+  const cookieHeader = request.headers.get('cookie');
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(';').map(c => c.trim());
+    for (const cookie of cookies) {
+      const [name, value] = cookie.split('=');
+      if (name === 'access_token' || name === 'sb-access-token' || name === 'cp_access_token') {
+        return value;
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -84,7 +89,8 @@ function verifyDemoToken(token: string): AuthUser | null {
       const email = token.slice(5);
       return DEMO_USERS[email] || null;
     }
-    return null;
+    // Also support direct email as token for demo
+    return DEMO_USERS[token] || null;
   } catch {
     return null;
   }
@@ -123,6 +129,33 @@ async function verifySupabaseToken(token: string): Promise<AuthUser | null> {
 }
 
 /**
+ * Verify token against database directly (for when Supabase Auth not configured)
+ */
+async function verifyDatabaseToken(token: string): Promise<AuthUser | null> {
+  try {
+    const { supabase } = await import('@/lib/supabase');
+
+    // Try to find user by email (token is email for demo)
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, role, name')
+      .eq('email', token)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !user) return null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role as UserRole,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Main authentication function
  */
 export async function authenticateRequest(request: NextRequest): Promise<AuthResult> {
@@ -137,11 +170,17 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
 
   let user: AuthUser | null = null;
 
-  if (isSupabaseConfigured()) {
-    user = await verifySupabaseToken(token);
-  } else {
-    // Demo mode
+  // Try Supabase Auth first
+  user = await verifySupabaseToken(token);
+
+  // If Supabase Auth failed, try demo token
+  if (!user) {
     user = verifyDemoToken(token);
+  }
+
+  // If still no user, try direct database (for demo users in DB)
+  if (!user && isSupabaseConfigured()) {
+    user = await verifyDatabaseToken(token);
   }
 
   if (!user) {

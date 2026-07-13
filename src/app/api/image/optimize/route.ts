@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
           optimizedBuffer = await sharpInstance.toBuffer();
 
           // Return optimized image
-          return new NextResponse(optimizedBuffer, {
+          return new NextResponse(new Uint8Array(optimizedBuffer), {
             headers: {
               'Content-Type': contentType,
               'Cache-Control': 'public, max-age=31536000, immutable',
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
         } catch (sharpError) {
           // Sharp not installed, return original
           console.warn('Sharp not available, returning original image');
-          return new NextResponse(buffer, {
+          return new NextResponse(new Uint8Array(buffer), {
             headers: {
               'Content-Type': response.headers.get('content-type') || 'image/jpeg',
               'Cache-Control': 'public, max-age=3600',

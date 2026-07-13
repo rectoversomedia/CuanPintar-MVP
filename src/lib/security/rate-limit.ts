@@ -24,22 +24,23 @@ type RateLimitTier = 'strict' | 'normal' | 'lenient' | 'track' | 'webhook' | 'au
 // Rate limit configurations
 const RATE_LIMITS: Record<RateLimitTier, RateLimitConfig> = {
   // Auth endpoints: 5 attempts per 15 minutes (strict)
-  auth: { max: 5, window: 900, keyPrefix: 'rl:auth' },
+  // Increase for development
+  auth: { max: 100, window: 60, keyPrefix: 'rl:auth' },
 
   // Normal API: 100 requests per minute
-  normal: { max: 100, window: 60, keyPrefix: 'rl:api' },
+  normal: { max: 500, window: 60, keyPrefix: 'rl:api' },
 
   // Lenient: 300 requests per minute (for read operations)
-  lenient: { max: 300, window: 60, keyPrefix: 'rl:lenient' },
+  lenient: { max: 1000, window: 60, keyPrefix: 'rl:lenient' },
 
   // Tracking endpoints: 1000 requests per minute (high volume)
-  track: { max: 1000, window: 60, keyPrefix: 'rl:track' },
+  track: { max: 5000, window: 60, keyPrefix: 'rl:track' },
 
   // Webhook endpoints: 500 requests per minute
-  webhook: { max: 500, window: 60, keyPrefix: 'rl:webhook' },
+  webhook: { max: 1000, window: 60, keyPrefix: 'rl:webhook' },
 
   // Strict: 10 requests per minute
-  strict: { max: 10, window: 60, keyPrefix: 'rl:strict' },
+  strict: { max: 100, window: 60, keyPrefix: 'rl:strict' },
 };
 
 // Initialize Redis only if credentials exist

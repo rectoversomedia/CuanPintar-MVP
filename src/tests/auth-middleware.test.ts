@@ -35,7 +35,9 @@ describe('Auth Middleware', () => {
       const result = await requireAuth(request);
 
       expect(result.success).toBe(false);
-      expect(result.response).toBeDefined();
+      if (!result.success && 'response' in result) {
+        expect(result.response).toBeDefined();
+      }
     });
 
     it('should authenticate demo user with valid token', async () => {

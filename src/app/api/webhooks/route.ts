@@ -199,7 +199,7 @@ async function processIncomingWebhook(
     success: true,
     webhookId,
     provider,
-    event: payload.transaction_status || payload.status || 'unknown',
+    event: (payload.transaction_status || payload.status || 'unknown') as string,
   };
 }
 

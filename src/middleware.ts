@@ -48,7 +48,7 @@ function isPublicRoute(pathname: string): boolean {
  * Main middleware function
  */
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl.pathname;
+  const pathname = request.nextUrl.pathname;
 
   // Allow public routes
   if (isPublicRoute(pathname)) {
@@ -73,8 +73,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // Production mode - require auth
-  const token = request.cookies.get('auth_token')?.value ||
-                request.headers.get('Authorization')?.replace('Bearer ', '');
+  const authHeader = request.headers.get('Authorization');
+  const cookieToken = request.cookies.get('auth_token')?.value;
+  const token = cookieToken || (authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null);
 
   if (!token) {
     const loginUrl = new URL('/login', request.url);

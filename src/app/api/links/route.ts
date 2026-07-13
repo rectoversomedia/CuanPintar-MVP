@@ -11,7 +11,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { requirePartnerOrAdmin, requirePartner, successResponse, errorResponse } from '@/lib/auth/middleware';
 import { z } from 'zod';
-
 // Validation schema for creating a link
 const createLinkSchema = z.object({
   program_id: z.string().min(1, 'Program ID is required'),
@@ -100,7 +99,7 @@ function buildTrackingUrl(
 export async function GET(request: NextRequest) {
   try {
     // Require authentication
-    const authResult = await requireAuth(request);
+    const authResult = await requirePartnerOrAdmin(request);
     if (!authResult.success) return authResult.response;
 
     const user = authResult.user;

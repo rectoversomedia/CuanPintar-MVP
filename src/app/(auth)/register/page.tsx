@@ -194,7 +194,7 @@ function RegisterPage() {
 
         <div className="border-t border-white/10 pt-6">
           <blockquote className="text-gray-400 italic">
-            "Sistem tracking yang transparan bikin kita bisa optimize budget dengan lebih baik."
+            &ldquo;Sistem tracking yang transparan bikin kita bisa optimize budget dengan lebih baik.&rdquo;
           </blockquote>
           <p className="text-white mt-2 font-medium">Budi Santoso</p>
           <p className="text-gray-500 text-sm">CEO, JakselNews Media</p>

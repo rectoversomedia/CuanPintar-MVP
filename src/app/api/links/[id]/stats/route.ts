@@ -11,9 +11,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
+interface DailyStat {
+  date: string;
+  clicks: number;
+  conversions: number;
+}
+
+interface ClickData {
+  id: string;
+  timestamp: string;
+  country: string;
+  device: string;
+  browser: string;
+}
+
 // Demo mode data store
-const demoDailyStats = new Map<string, any[]>();
-const demoClicks = new Map<string, any[]>();
+const demoDailyStats = new Map<string, DailyStat[]>();
+const demoClicks = new Map<string, ClickData[]>();
 
 function getDemoData(linkId: string) {
   const stats = demoDailyStats.get(linkId) || [];

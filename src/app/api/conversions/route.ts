@@ -32,7 +32,7 @@ const createConversionSchema = z.object({
     content: z.string().optional(),
   }).optional(),
   payout_amount: z.number().positive().optional(),
-  event_data: z.record(z.unknown()).optional(),
+  event_data: z.record(z.string(), z.unknown()).optional(),
 });
 
 const listConversionsSchema = z.object({

@@ -50,6 +50,27 @@ export function validateBody<T>(
 }
 
 /**
+ * Validate a plain object against a Zod schema
+ */
+export function validateObject<T>(
+  schema: ZodSchema<T>,
+  data: Record<string, unknown>
+): ValidationResult {
+  try {
+    const validated = schema.parse(data);
+    return { success: true, data: validated as Record<string, unknown> };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { success: false, errors: formatIssues(error.issues) };
+    }
+    return {
+      success: false,
+      errors: [{ field: 'body', message: 'Invalid data' }],
+    };
+  }
+}
+
+/**
  * Validate query parameters against a Zod schema
  */
 export function validateQuery<T>(

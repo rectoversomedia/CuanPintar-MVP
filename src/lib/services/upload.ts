@@ -122,7 +122,6 @@ async function optimizeImage(
         pipeline = pipeline.webp({ quality: options.quality || 80 });
         break;
       case 'jpeg':
-      case 'jpg':
         pipeline = pipeline.jpeg({ quality: options.quality || 80, progressive: true });
         break;
       case 'png':
@@ -162,8 +161,9 @@ async function generateOptimizedVariants(
 
   for (const [presetName, presetOptions] of Object.entries(UPLOAD_CONFIG.presets)) {
     try {
-      const optimized = await optimizeImage(originalBuffer, presetOptions);
-      const ext = presetOptions.format || 'webp';
+      const format = presetOptions.format as 'webp' | 'jpeg' | 'png' | undefined;
+      const optimized = await optimizeImage(originalBuffer, { ...presetOptions, format });
+      const ext = format || 'webp';
       const variantName = `${baseName}_${presetName}.${ext}`;
 
       // Upload variant
@@ -332,7 +332,7 @@ export async function uploadFile(
   const originalDimensions = await getImageDimensionsFromBuffer(buffer);
 
   // Optimize if enabled and is an image
-  let processedBuffer = buffer;
+  let processedBuffer: Buffer = Buffer.from(buffer);
   let width = originalDimensions.width;
   let height = originalDimensions.height;
 
@@ -348,7 +348,7 @@ export async function uploadFile(
 
       // Only use optimized if it's smaller
       if (optimized.buffer.length < buffer.length) {
-        processedBuffer = optimized.buffer;
+        processedBuffer = Buffer.from(optimized.buffer) as Buffer;
         width = optimized.width;
         height = optimized.height;
       }

@@ -113,7 +113,7 @@ export default function LoginPage() {
         {/* Testimonial */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="relative z-10 border-t border-white/10 pt-6">
           <blockquote className="text-white/60 italic">
-            "CuanPintar transformed how we manage acquisition across multiple channels. One program, everywhere."
+            &ldquo;CuanPintar transformed how we manage acquisition across multiple channels. One program, everywhere.&rdquo;
           </blockquote>
           <p className="text-white mt-3 font-medium">Sarah Wijaya</p>
           <p className="text-white/40 text-sm">Marketing Director, Tunaiku</p>

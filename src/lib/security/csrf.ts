@@ -114,6 +114,11 @@ export function getCSRFTokenFromRequest(request: Request): string | null {
  * Validate CSRF token from request
  */
 export function validateCSRFToken(request: Request): boolean {
+  // Skip CSRF validation in development mode for easier testing
+  if (process.env.NODE_ENV === 'development') {
+    return true;
+  }
+
   const token = getCSRFTokenFromRequest(request);
   if (!token) return false;
   return verifyCSRFToken(token);

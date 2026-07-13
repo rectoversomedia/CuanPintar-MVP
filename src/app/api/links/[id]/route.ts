@@ -20,9 +20,22 @@ const updateLinkSchema = z.object({
 });
 
 // Demo mode in-memory storage (shared with parent route)
-const demoLinks = new Map<string, any>();
+interface DemoLink {
+  id: string;
+  title: string;
+  program_id: string;
+  partner_id: string;
+  short_code: string;
+  url: string;
+  clicks: number;
+  conversions: number;
+  created_at: string;
+  is_active: boolean;
+}
+
+const demoLinks = new Map<string, DemoLink>();
 declare global {
-  var __demoLinks: Map<string, any> | undefined;
+  var __demoLinks: Map<string, DemoLink> | undefined;
 }
 if (!global.__demoLinks) {
   global.__demoLinks = demoLinks;

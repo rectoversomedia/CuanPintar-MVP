@@ -43,7 +43,7 @@ const s2sConversionSchema = z.object({
     term: z.string().optional(),
     content: z.string().optional(),
   }).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   // S2S specific
   api_key: z.string().optional(),
   timestamp: z.string().datetime().optional(),
