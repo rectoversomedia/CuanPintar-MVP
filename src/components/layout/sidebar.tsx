@@ -113,7 +113,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         collapsed ? 'px-2' : 'px-4'
       )}>
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-16 h-16 relative">
+          <div className="w-48 h-48 relative">
             <Image
               src="/logo.png"
               alt="CuanPintar"
