@@ -11,17 +11,23 @@ import { checkRateLimitFromIP, createRateLimitHeaders, rateLimitErrorResponse } 
 
 const AUTH_RATE_LIMIT_TIER = 'auth';
 
-// Demo users matching seed data
+// All demo users - match with seeded database
 const DEMO_USERS = [
-  { id: '00000000-0000-0000-0000-000000000011', email: 'sarah@tunaiku.com', name: 'Sarah Wijaya', role: 'advertiser', companyName: 'Tunaiku', advertiserId: '00000000-0000-0000-0000-100000000011' },
-  { id: '00000000-0000-0000-0000-000000000021', email: 'media@kompas.com', name: 'Media Partner Jakarta', role: 'partner', companyName: 'Kompas Media', partnerId: '00000000-0000-0000-0000-200000000021' },
+  // Admin
   { id: '00000000-0000-0000-0000-000000000001', email: 'admin@cuanpintar.com', name: 'Admin CuanPintar', role: 'admin', companyName: 'CuanPintar' },
+  // Advertisers
+  { id: '00000000-0000-0000-0000-000000000011', email: 'sarah@tunaiku.com', name: 'Sarah Wijaya', role: 'advertiser', companyName: 'Tunaiku', advertiserId: '00000000-0000-0000-0001-000000000001' },
+  { id: '00000000-0000-0000-0000-000000000004', email: 'marketing@prudential.co.id', name: 'Marketing Prudential', role: 'advertiser', companyName: 'Prudential Indonesia', advertiserId: '00000000-0000-0000-0001-000000000002' },
+  // Partners
+  { id: '00000000-0000-0000-0000-000000000003', email: 'budi@jakselnews.com', name: 'Budi Santoso', role: 'partner', companyName: 'JakselNews Media', partnerId: '00000000-0000-0000-0002-000000000001' },
+  { id: '00000000-0000-0000-0000-000000000005', email: 'media@detik.com', name: 'Media Detik', role: 'partner', companyName: 'Detik Finance', partnerId: '00000000-0000-0000-0002-000000000002' },
+  { id: '00000000-0000-0000-0000-000000000006', email: 'creator@finance.youtube', name: 'Finance Creator', role: 'partner', companyName: 'Finance Creator Channel', partnerId: '00000000-0000-0000-0002-000000000003' },
+  { id: '00000000-0000-0000-0000-000000000007', email: 'affiliate@budi.marketing', name: 'Budi Affiliate', role: 'partner', companyName: 'Budi Affiliate Network', partnerId: '00000000-0000-0000-0002-000000000004' },
 ];
 
 // POST /api/auth
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
     const rateLimitResult = await checkRateLimitFromIP(request, AUTH_RATE_LIMIT_TIER);
     if (!rateLimitResult.allowed) {
       return rateLimitErrorResponse(rateLimitResult);
@@ -62,37 +68,24 @@ export async function GET(request: NextRequest) {
 async function handleGetMe(request: NextRequest, rateLimitResult: Awaited<ReturnType<typeof checkRateLimitFromIP>>) {
   const headers = createRateLimitHeaders(rateLimitResult);
 
-  // Check for session in cookies or localStorage
   const sessionCookie = request.cookies.get('cp_session');
   if (sessionCookie?.value) {
     try {
       const session = JSON.parse(decodeURIComponent(sessionCookie.value));
-      return NextResponse.json({
-        success: true,
-        data: session,
-      }, { headers });
-    } catch {
-      // Invalid session
-    }
+      return NextResponse.json({ success: true, data: session }, { headers });
+    } catch {}
   }
 
-  // Check for token in header
   const authHeader = request.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
     const demoUser = DEMO_USERS.find(u => u.email === token);
     if (demoUser) {
-      return NextResponse.json({
-        success: true,
-        data: demoUser,
-      }, { headers });
+      return NextResponse.json({ success: true, data: demoUser }, { headers });
     }
   }
 
-  return NextResponse.json(
-    { success: false, error: 'Not authenticated' },
-    { status: 401, headers }
-  );
+  return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401, headers });
 }
 
 async function handleLogin(
@@ -101,7 +94,6 @@ async function handleLogin(
 ) {
   const headers = createRateLimitHeaders(rateLimitResult);
 
-  // Validate input
   const validation = validateObject(loginSchema, body);
   if (!validation.success) {
     return NextResponse.json(
@@ -112,36 +104,43 @@ async function handleLogin(
 
   const { email, password } = validation.data as { email: string; password: string };
 
-  // Try Supabase Auth first if configured
+  // Check DEMO_USERS first - match any seeded user
+  const demoUser = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+  if (demoUser && (password === 'demo123' || password === 'demo' || password === '')) {
+    const response = NextResponse.json(
+      { success: true, data: { user: demoUser } },
+      { headers }
+    );
+    response.cookies.set('cp_session', encodeURIComponent(JSON.stringify(demoUser)), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+    return response;
+  }
+
+  // Try Supabase Auth if configured
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (!error && data.user) {
-        // Get user profile with role-specific data
         const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
+          .from('users').select('*').eq('id', data.user.id).single();
 
-        // Get advertiser or partner ID
         let advertiserId: string | undefined;
         let partnerId: string | undefined;
 
         if (profile?.role === 'advertiser') {
           const { data: adv } = await supabase
-            .from('advertisers')
-            .select('id')
-            .eq('user_id', data.user.id)
-            .single();
+            .from('advertisers').select('id').eq('user_id', data.user.id).single();
           advertiserId = adv?.id;
         } else if (profile?.role === 'partner') {
           const { data: part } = await supabase
-            .from('partners')
-            .select('id')
-            .eq('user_id', data.user.id)
-            .single();
+            .from('partners').select('id').eq('user_id', data.user.id).single();
           partnerId = part?.id;
         }
 
@@ -155,12 +154,7 @@ async function handleLogin(
           partnerId,
         };
 
-        const response = NextResponse.json(
-          { success: true, data: { user: userData } },
-          { headers }
-        );
-
-        // Set session cookie
+        const response = NextResponse.json({ success: true, data: { user: userData } }, { headers });
         response.cookies.set('cp_session', encodeURIComponent(JSON.stringify(userData)), {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -168,95 +162,10 @@ async function handleLogin(
           maxAge: 60 * 60 * 24 * 7,
           path: '/',
         });
-
         return response;
       }
     } catch (err) {
       console.error('Supabase auth error:', err);
-    }
-  }
-
-  // Demo mode: check against demo users or accept 'demo123' password
-  const demoUser = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-  if (demoUser && (password === 'demo123' || password === 'demo' || password === '')) {
-    const response = NextResponse.json(
-      { success: true, data: { user: demoUser } },
-      { headers }
-    );
-
-    response.cookies.set('cp_session', encodeURIComponent(JSON.stringify(demoUser)), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    });
-
-    return response;
-  }
-
-  // Try direct database auth if Supabase is configured
-  if (isSupabaseConfigured()) {
-    try {
-      const { data: dbUser, error: dbError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('is_active', true)
-        .single();
-
-      if (!dbError && dbUser) {
-        // Accept demo123 for seeded users
-        if (password === 'demo123') {
-          // Get advertiser or partner ID
-          let advertiserId: string | undefined;
-          let partnerId: string | undefined;
-
-          if (dbUser.role === 'advertiser') {
-            const { data: adv } = await supabase
-              .from('advertisers')
-              .select('id')
-              .eq('user_id', dbUser.id)
-              .single();
-            advertiserId = adv?.id;
-          } else if (dbUser.role === 'partner') {
-            const { data: part } = await supabase
-              .from('partners')
-              .select('id')
-              .eq('user_id', dbUser.id)
-              .single();
-            partnerId = part?.id;
-          }
-
-          const userData = {
-            id: dbUser.id,
-            email: dbUser.email,
-            name: dbUser.name,
-            role: dbUser.role,
-            companyName: dbUser.company_name,
-            advertiserId,
-            partnerId,
-          };
-
-          const response = NextResponse.json(
-            { success: true, data: { user: userData } },
-            { headers }
-          );
-
-          response.cookies.set('cp_session', encodeURIComponent(JSON.stringify(userData)), {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7,
-            path: '/',
-          });
-
-          return response;
-        }
-      }
-    } catch (err) {
-      console.error('DB auth error:', err);
     }
   }
 
@@ -281,80 +190,42 @@ async function handleRegister(
   }
 
   const { email, password, name, role, company_name, phone } = validation.data as {
-    email: string;
-    password: string;
-    name: string;
+    email: string; password: string; name: string;
     role: 'advertiser' | 'partner';
-    company_name?: string;
-    phone?: string;
+    company_name?: string; phone?: string;
   };
 
   if (!isSupabaseConfigured()) {
-    // Demo mode registration
-    const newUser = {
-      id: `user_${Date.now()}`,
-      email,
-      name,
-      role,
-      companyName: company_name,
-    };
-
+    const newUser = { id: `user_${Date.now()}`, email, name, role, companyName: company_name };
     return NextResponse.json(
-      { success: true, data: { user: newUser, message: 'Demo mode: Registration successful' } },
+      { success: true, data: { user: newUser, message: 'Demo mode' } },
       { status: 201, headers }
     );
   }
 
   try {
-    // Sign up with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name, role, company_name, phone },
-      },
+      email, password,
+      options: { data: { name, role, company_name, phone } },
     });
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 400, headers }
-      );
+      return NextResponse.json({ success: false, error: error.message }, { status: 400, headers });
     }
 
     if (data.user) {
-      // Create user profile
       await supabase.from('users').insert({
-        id: data.user.id,
-        email,
-        name,
-        role,
-        company_name,
-        phone,
-        status: 'pending',
+        id: data.user.id, email, name, role, company_name, phone, status: 'pending',
       });
 
-      // Create role-specific profile
       if (role === 'advertiser') {
-        await supabase.from('advertisers').insert({
-          user_id: data.user.id,
-          company_name,
-          status: 'pending',
-        });
+        await supabase.from('advertisers').insert({ user_id: data.user.id, company_name, status: 'pending' });
       } else {
-        await supabase.from('partners').insert({
-          user_id: data.user.id,
-          partner_name: company_name,
-          partner_type: 'affiliate',
-          status: 'pending',
-        });
+        await supabase.from('partners').insert({ user_id: data.user.id, partner_name: company_name, partner_type: 'affiliate', status: 'pending' });
       }
 
       return NextResponse.json(
-        {
-          success: true,
-          data: { user: { id: data.user.id, email, name, role }, message: 'Registration successful' },
-        },
+        { success: true, data: { user: { id: data.user.id, email, name, role } } },
         { status: 201, headers }
       );
     }
@@ -362,25 +233,13 @@ async function handleRegister(
     console.error('Registration error:', err);
   }
 
-  return NextResponse.json(
-    { success: false, error: 'Registration failed' },
-    { status: 500, headers }
-  );
+  return NextResponse.json({ success: false, error: 'Registration failed' }, { status: 500, headers });
 }
 
 async function handleLogout(rateLimitResult: Awaited<ReturnType<typeof checkRateLimitFromIP>>) {
   const headers = createRateLimitHeaders(rateLimitResult);
-
-  if (isSupabaseConfigured()) {
-    await supabase.auth.signOut();
-  }
-
-  const response = NextResponse.json(
-    { success: true, message: 'Logged out successfully' },
-    { headers }
-  );
-
+  if (isSupabaseConfigured()) await supabase.auth.signOut();
+  const response = NextResponse.json({ success: true, message: 'Logged out' }, { headers });
   response.cookies.delete('cp_session');
-
   return response;
 }

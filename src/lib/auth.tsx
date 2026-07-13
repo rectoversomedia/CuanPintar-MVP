@@ -57,10 +57,9 @@ function toAuthUser(supabaseUser: DbUser | null): AuthUser | null {
     email: supabaseUser.email,
     name: supabaseUser.name,
     role: supabaseUser.role,
-    companyName: supabaseUser.company_name || undefined,
     avatar: supabaseUser.avatar_url || undefined,
     phone: supabaseUser.phone || undefined,
-    status: supabaseUser.status,
+    status: supabaseUser.is_active ? 'active' : 'suspended',
     createdAt: supabaseUser.created_at,
   };
 }
