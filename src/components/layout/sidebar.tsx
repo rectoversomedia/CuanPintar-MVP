@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   ChartLine,
@@ -112,8 +113,14 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         collapsed ? 'justify-center px-2' : 'px-4'
       )}>
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
-            <span className="text-white font-bold text-sm">C</span>
+          <div className="w-8 h-8 relative">
+            <Image
+              src="/Logo CuanPintar.png"
+              alt="CuanPintar"
+              fill
+              className="object-contain"
+              unoptimized
+            />
           </div>
           {!collapsed && (
             <span className="text-lg font-bold text-white">CuanPintar</span>
