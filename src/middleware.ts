@@ -16,7 +16,7 @@ import { jwtVerify } from 'jose';
 
 // Environment
 const isProduction = process.env.NODE_ENV === 'production';
-const isDemoMode = !isSupabaseConfigured();
+const isDemoMode = !isSupabaseConfigured() || process.env.DEMO_MODE === 'true';
 
 // JWT Secret (use HS256 for simplicity)
 const JWT_SECRET = new TextEncoder().encode(

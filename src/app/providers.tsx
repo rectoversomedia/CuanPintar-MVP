@@ -8,7 +8,7 @@ import { Toast } from '@/components/ui/toast';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider defaultTheme="system">
+    <ThemeProvider defaultTheme="light">
       <I18nProvider initialLocale="id">
         <AuthProvider>
           <UIProvider>
