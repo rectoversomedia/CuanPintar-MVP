@@ -102,68 +102,65 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 h-screen bg-[#0a1628] text-white transition-all duration-300',
-        collapsed ? 'w-[72px]' : 'w-[260px]'
+        'fixed left-0 top-0 z-40 h-screen bg-[#0a1628] text-white flex flex-col transition-all duration-300',
+        collapsed ? 'w-[68px]' : 'w-[220px]'
       )}
     >
-      <div className="flex h-full flex-col">
-        {/* Logo */}
-        <div className={cn(
-          'flex h-16 items-center border-b border-white/10 px-4',
-          collapsed ? 'justify-center' : 'justify-center'
-        )}>
-          <Link href="/" className="flex items-center gap-2">
-            {!collapsed ? (
-              <span className="text-2xl font-bold">
-                <span className="text-[#FF6B35]">cuan</span>
-                <span className="text-[#0066FF]">pintar</span>
-              </span>
-            ) : (
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#FF6B35] to-[#0066FF] flex items-center justify-center">
-                <span className="text-lg font-bold text-white">CP</span>
-              </div>
+      {/* Logo */}
+      <div className={cn(
+        'h-14 flex items-center border-b border-white/10',
+        collapsed ? 'justify-center px-2' : 'px-4'
+      )}>
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
+            <span className="text-white font-bold text-sm">C</span>
+          </div>
+          {!collapsed && (
+            <span className="text-lg font-bold text-white">CuanPintar</span>
+          )}
+        </Link>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 py-3 overflow-y-auto">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+              isActive(item.href)
+                ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-md'
+                : 'text-gray-400 hover:bg-white/10 hover:text-white',
+              collapsed && 'justify-center px-2'
             )}
-          </Link>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                isActive(item.href)
-                  ? 'bg-gradient-to-r from-[#FF6B35] to-[#0066FF] text-white shadow-lg shadow-[#FF6B35]/20'
-                  : 'text-gray-300 hover:bg-white/10 hover:text-white',
-                collapsed && 'justify-center px-2'
-              )}
-            >
-              {item.icon}
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Collapse Toggle */}
-        <div className="border-t border-white/10 p-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggle}
-            className="w-full justify-center text-gray-400 hover:text-white"
           >
-            {collapsed ? (
-              <CaretRight size={18} weight="bold" />
-            ) : (
-              <>
-                <CaretLeft size={18} weight="bold" className="mr-2" />
-                <span>Collapse</span>
-              </>
-            )}
-          </Button>
-        </div>
+            {item.icon}
+            {!collapsed && <span>{item.label}</span>}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Collapse Toggle */}
+      <div className="border-t border-white/10 p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggle}
+          className={cn(
+            'w-full text-gray-400 hover:text-white hover:bg-white/10',
+            collapsed && 'px-2'
+          )}
+        >
+          {collapsed ? (
+            <CaretRight size={18} weight="bold" />
+          ) : (
+            <>
+              <CaretLeft size={18} weight="bold" className="mr-2" />
+              <span className="text-xs">Collapse</span>
+            </>
+          )}
+        </Button>
       </div>
     </aside>
   );

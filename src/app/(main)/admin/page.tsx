@@ -81,146 +81,103 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-[var(--background-secondary)]">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-[260px]'}`}>
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-[68px]' : 'ml-[220px]'}`}>
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)] px-6 py-4">
+        <header className="sticky top-0 z-30 bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)] px-6 py-3">
           <div className="flex items-center justify-between">
-            <div className="text-center flex-1">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] bg-clip-text text-transparent">
-                Admin Overview
-              </h1>
-              <p className="text-sm text-[var(--foreground-muted)]">Platform-wide monitoring and management</p>
+            <div>
+              <h1 className="text-lg font-bold text-[var(--foreground)]">Admin Overview</h1>
+              <p className="text-xs text-[var(--foreground-muted)]">Platform-wide monitoring</p>
             </div>
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="relative">
-                <Bell size={22} weight="duotone" className="text-[var(--foreground-muted)]" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--primary)] rounded-full text-[10px] font-bold text-white flex items-center justify-center">
-                  3
-                </span>
+                <Bell size={20} className="text-[var(--foreground-muted)]" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--primary)] rounded-full text-[8px] font-bold text-white flex items-center justify-center">3</span>
               </Button>
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="/api/placeholder/36/36" />
-                <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white font-semibold text-sm">
-                  AD
-                </AvatarFallback>
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white font-semibold text-xs">AU</AvatarFallback>
               </Avatar>
             </div>
           </div>
         </header>
 
-        <main className="p-6">
+        <main className="p-5">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
             {stats.map((stat, index) => (
-              <Card
-                key={index}
-                className={`relative overflow-hidden border ${stat.borderColor} hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}
-              >
-                <CardContent className="p-6">
-                  {/* Gradient Background */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-50`} />
-
-                  <div className="relative flex items-center justify-between">
+              <Card key={index} className="relative overflow-hidden border hover:shadow-md transition-all">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-[var(--foreground-muted)] mb-1">{stat.label}</p>
-                      <p className="text-3xl font-bold text-[var(--foreground)]">{stat.value}</p>
+                      <p className="text-xs font-medium text-[var(--foreground-muted)]">{stat.label}</p>
+                      <p className="text-2xl font-bold text-[var(--foreground)]">{stat.value}</p>
                     </div>
-                    <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                      style={{ backgroundColor: `${stat.color}15` }}
-                    >
-                      <stat.icon size={28} weight="duotone" style={{ color: stat.color }} />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${stat.color}15` }}>
+                      <stat.icon size={22} weight="duotone" style={{ color: stat.color }} />
                     </div>
                   </div>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-4 w-full justify-end text-gray-500 hover:text-gray-900 p-0 h-auto font-medium text-xs"
-                    asChild
-                  >
-                    <a href={stat.href}>
-                      View Details <ArrowRight size={14} className="ml-1" />
-                    </a>
-                  </Button>
+                  <a href={stat.href} className="text-xs text-[var(--primary)] hover:underline mt-2 inline-block">View Details →</a>
                 </CardContent>
               </Card>
             ))}
           </div>
 
           {/* Metrics & Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
             {/* Conversion Overview */}
-            <Card className="lg:col-span-2 border-0 shadow-lg overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-[#FF6B35] via-[#0066FF] to-[#8B5CF6]" />
+            <Card className="lg:col-span-2 border shadow-sm">
+              <div className="h-1.5 bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#F43F5E]" />
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-gray-900">Conversion Overview</CardTitle>
-                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                    <TrendUp size={12} className="mr-1" />
-                    +12.5%
-                  </Badge>
+                  <CardTitle className="text-base font-semibold">Conversion Overview</CardTitle>
+                  <Badge className="bg-green-100 text-green-700 text-xs"><TrendUp size={10} className="mr-1" />+12.5%</Badge>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100">
-                    <p className="text-2xl font-bold text-gray-900">{formatNumber(dashboard.total_conversions)}</p>
-                    <p className="text-xs text-gray-500 mt-1 font-medium">Total</p>
+                <div className="grid grid-cols-4 gap-3 mb-4">
+                  <div className="text-center p-3 rounded-lg bg-gray-50 border">
+                    <p className="text-xl font-bold">{formatNumber(dashboard.total_conversions)}</p>
+                    <p className="text-[10px] text-gray-500 font-medium">Total</p>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100/50 border border-green-100">
-                    <p className="text-2xl font-bold text-green-600">{formatNumber(dashboard.valid_conversions)}</p>
-                    <p className="text-xs text-gray-500 mt-1 font-medium">Valid</p>
+                  <div className="text-center p-3 rounded-lg bg-green-50 border border-green-100">
+                    <p className="text-xl font-bold text-green-600">{formatNumber(dashboard.valid_conversions)}</p>
+                    <p className="text-[10px] text-gray-500 font-medium">Valid</p>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100/50 border border-yellow-100">
-                    <p className="text-2xl font-bold text-yellow-600">
-                      {formatNumber(dashboard.total_conversions - dashboard.valid_conversions - dashboard.rejected_conversions)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1 font-medium">Pending</p>
+                  <div className="text-center p-3 rounded-lg bg-yellow-50 border border-yellow-100">
+                    <p className="text-xl font-bold text-yellow-600">{formatNumber(dashboard.total_conversions - dashboard.valid_conversions - dashboard.rejected_conversions)}</p>
+                    <p className="text-[10px] text-gray-500 font-medium">Pending</p>
                   </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-red-50 to-red-100/50 border border-red-100">
-                    <p className="text-2xl font-bold text-red-600">{formatNumber(dashboard.rejected_conversions)}</p>
-                    <p className="text-xs text-gray-500 mt-1 font-medium">Rejected</p>
+                  <div className="text-center p-3 rounded-lg bg-red-50 border border-red-100">
+                    <p className="text-xl font-bold text-red-600">{formatNumber(dashboard.rejected_conversions)}</p>
+                    <p className="text-[10px] text-gray-500 font-medium">Rejected</p>
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-600 font-medium">Validation Rate</span>
-                    <span className="font-bold text-green-600">
-                      {Math.round((dashboard.valid_conversions / dashboard.total_conversions) * 100)}%
-                    </span>
+                    <span className="font-bold text-green-600">{Math.round((dashboard.valid_conversions / dashboard.total_conversions) * 100)}%</span>
                   </div>
-                  <Progress
-                    value={(dashboard.valid_conversions / dashboard.total_conversions) * 100}
-                    className="h-3 rounded-full"
-                  />
+                  <Progress value={(dashboard.valid_conversions / dashboard.total_conversions) * 100} className="h-2" />
                 </div>
               </CardContent>
             </Card>
 
             {/* Financial Overview */}
-            <Card className="border-0 shadow-lg overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-[#0066FF] to-[#8B5CF6]" />
+            <Card className="border shadow-sm">
+              <div className="h-1.5 bg-gradient-to-r from-[#8B5CF6] to-[#6366F1]" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-bold text-gray-900">Financial</CardTitle>
+                <CardTitle className="text-base font-semibold">Financial</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2">
                 {metrics.map((metric, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 border border-gray-100"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: `${metric.color}15` }}
-                      >
-                        <CurrencyDollar size={20} weight="duotone" style={{ color: metric.color }} />
+                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${metric.color}15` }}>
+                        <CurrencyDollar size={16} weight="duotone" style={{ color: metric.color }} />
                       </div>
-                      <span className="text-sm font-medium text-gray-600">{metric.label}</span>
+                      <span className="text-xs font-medium text-gray-600">{metric.label}</span>
                     </div>
-                    <span className="text-lg font-bold" style={{ color: metric.color }}>{metric.value}</span>
+                    <span className="text-sm font-bold" style={{ color: metric.color }}>{metric.value}</span>
                   </div>
                 ))}
               </CardContent>
@@ -228,78 +185,48 @@ export default function AdminDashboard() {
           </div>
 
           {/* Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Recent Advertisers */}
-            <Card className="border-0 shadow-lg overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-[#FF6B35] to-[#EC4899]" />
+            <Card className="border shadow-sm">
+              <div className="h-1.5 bg-gradient-to-r from-[#6366F1] to-[#8B5CF6]" />
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-bold text-gray-900">Recent Advertisers</CardTitle>
-                <Button variant="ghost" size="sm" className="text-[#0066FF] hover:text-[#0066FF] hover:bg-blue-50" asChild>
-                  <a href="/admin/advertisers">
-                    View All <ArrowRight size={14} className="ml-1" />
-                  </a>
-                </Button>
+                <CardTitle className="text-base font-semibold">Recent Advertisers</CardTitle>
+                <a href="/admin/advertisers" className="text-xs text-[var(--primary)] hover:underline">View All →</a>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {mockAdvertisers.slice(0, 4).map((advertiser, index) => (
-                  <div
-                    key={advertiser.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-[var(--card)] border border-[var(--border)] hover:border-[var(--primary)]/30 hover:shadow-md transition-all duration-200"
-                  >
+              <CardContent className="space-y-2">
+                {mockAdvertisers.slice(0, 4).map((advertiser) => (
+                  <div key={advertiser.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--card)] border hover:border-[var(--primary)]/30 transition-colors cursor-pointer">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-md bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)]"
-                      >
-                        {advertiser.company_name.charAt(0)}
-                      </div>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)]">{advertiser.company_name.charAt(0)}</div>
                       <div>
-                        <p className="font-semibold text-[var(--foreground)]">{advertiser.company_name}</p>
-                        <p className="text-sm text-[var(--foreground-muted)]">{advertiser.industry}</p>
+                        <p className="font-medium text-sm">{advertiser.company_name}</p>
+                        <p className="text-xs text-gray-500">{advertiser.industry}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <Badge
-                        className={advertiser.status === 'active' ? 'bg-[var(--success-light)] text-[var(--success-foreground)]' : 'bg-[var(--warning-light)] text-[var(--warning-foreground)]'}
-                      >
-                        {advertiser.status}
-                      </Badge>
-                      <p className="text-xs text-[var(--foreground-subtle)] mt-1">{advertiser.active_programs} programs</p>
+                      <Badge className={advertiser.status === 'active' ? 'bg-green-100 text-green-700 text-xs' : 'bg-yellow-100 text-yellow-700 text-xs'}>{advertiser.status}</Badge>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{advertiser.active_programs} programs</p>
                     </div>
                   </div>
                 ))}
               </CardContent>
             </Card>
 
-            {/* Recent Fraud Alerts */}
-            <Card className="border-0 shadow-lg overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-[#EF4444] to-[#F59E0B]" />
+            {/* Fraud Alerts */}
+            <Card className="border shadow-sm">
+              <div className="h-1.5 bg-gradient-to-r from-red-500 to-yellow-500" />
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-bold text-gray-900">Fraud Alerts</CardTitle>
-                <Button variant="ghost" size="sm" className="text-[#EF4444] hover:text-[#EF4444] hover:bg-red-50" asChild>
-                  <a href="/admin/fraud">
-                    Review All <ArrowRight size={14} className="ml-1" />
-                  </a>
-                </Button>
+                <CardTitle className="text-base font-semibold">Fraud Alerts</CardTitle>
+                <a href="/admin/fraud" className="text-xs text-red-500 hover:underline">Review All →</a>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {mockConversions.filter(c => c.status === 'fraud' || c.fraud_signals.length > 0).slice(0, 4).map((conversion, index) => (
-                  <div
-                    key={conversion.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-red-50/50 to-white border border-red-100 hover:shadow-md transition-all duration-200"
-                  >
+              <CardContent className="space-y-2">
+                {mockConversions.filter(c => c.status === 'fraud' || c.fraud_signals.length > 0).slice(0, 4).map((conversion) => (
+                  <div key={conversion.id} className="flex items-center justify-between p-3 rounded-lg bg-red-50/50 border border-red-100">
                     <div>
-                      <p className="font-semibold text-gray-900">{conversion.program_name}</p>
-                      <p className="text-sm text-gray-500">
-                        {conversion.partner_name} • {conversion.fraud_signals.length} signals
-                      </p>
+                      <p className="font-medium text-sm">{conversion.program_name}</p>
+                      <p className="text-xs text-gray-500">{conversion.partner_name} • {conversion.fraud_signals.length} signals</p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-                    >
-                      Review
-                    </Button>
+                    <Button size="sm" variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 text-xs">Review</Button>
                   </div>
                 ))}
               </CardContent>
