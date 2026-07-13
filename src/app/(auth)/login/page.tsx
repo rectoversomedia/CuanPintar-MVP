@@ -12,6 +12,8 @@ import {
   ArrowRight,
   Check,
   Zap,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,10 +21,11 @@ import { Input } from '@/components/ui/input';
 
 type Role = 'advertiser' | 'partner' | 'admin';
 
+// Demo users matching the database seed
 const DEMO_USERS = [
-  { id: 'adv_001', email: 'sarah@tunaiku.com', name: 'Sarah Wijaya', role: 'advertiser' as Role, companyName: 'Tunaiku' },
-  { id: 'part_001', email: 'budi@jakselnews.com', name: 'Budi Santoso', role: 'partner' as Role, companyName: 'JakselNews Media' },
-  { id: 'admin_001', email: 'admin@cuanpintar.com', name: 'Admin User', role: 'admin' as Role, companyName: 'CuanPintar' },
+  { id: '00000000-0000-0000-0000-000000000011', email: 'sarah@tunaiku.com', name: 'Sarah Wijaya', role: 'advertiser' as Role, companyName: 'Tunaiku' },
+  { id: '00000000-0000-0000-0000-000000000021', email: 'media@kompas.com', name: 'Media Partner Jakarta', role: 'partner' as Role, companyName: 'Kompas Media' },
+  { id: '00000000-0000-0000-0000-000000000001', email: 'admin@cuanpintar.com', name: 'Admin CuanPintar', role: 'admin' as Role, companyName: 'CuanPintar' },
 ];
 
 const roles = [
@@ -43,28 +46,94 @@ export default function LoginPage() {
   const [step, setStep] = useState<'role' | 'credentials'>('role');
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
     setStep('credentials');
+    // Pre-fill demo credentials
+    const demoUser = DEMO_USERS.find(u => u.role === role);
+    if (demoUser) {
+      setEmail(demoUser.email);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Please enter email and password');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Try real API login first
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'login',
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store user data
+        const userData = data.data?.user || { email, role: selectedRole };
+        localStorage.setItem('cp_user', JSON.stringify(userData));
+        localStorage.setItem('cp_session', JSON.stringify({ authenticated: true, timestamp: Date.now() }));
+
+        // Set cookies for middleware
+        const expires = new Date();
+        expires.setDate(expires.getDate() + 7);
+        document.cookie = `cp_access_token=${encodeURIComponent(email)}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+        document.cookie = `cp_user_role=${selectedRole}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+
+        router.push(`/${selectedRole}`);
+      } else {
+        // If API fails, try demo mode
+        console.log('API login failed, trying demo mode:', data.error);
+        handleDemoLogin();
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      // Fallback to demo mode on network error
+      handleDemoLogin();
+    }
   };
 
   const handleDemoLogin = async () => {
     if (!selectedRole) return;
     setIsLoading(true);
+    setError(null);
 
-    const user = DEMO_USERS.find((u) => u.role === selectedRole);
-    localStorage.setItem('cp_user', JSON.stringify(user));
-    localStorage.setItem('cp_session', JSON.stringify({ demo: true, role: selectedRole, userId: user?.id }));
+    try {
+      const user = DEMO_USERS.find((u) => u.role === selectedRole);
+      localStorage.setItem('cp_user', JSON.stringify(user));
+      localStorage.setItem('cp_session', JSON.stringify({ demo: true, role: selectedRole, userId: user?.id }));
 
-    // Set cookie for middleware auth check
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 7);
-    document.cookie = `cp_access_token=${user?.email}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
-    document.cookie = `cp_user_role=${selectedRole}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+      // Set cookie for middleware auth check
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 7);
+      document.cookie = `cp_access_token=${encodeURIComponent(user?.email || '')}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
+      document.cookie = `cp_user_role=${selectedRole}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-    router.push(`/${selectedRole}`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      router.push(`/${selectedRole}`);
+    } catch (err) {
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -173,9 +242,30 @@ export default function LoginPage() {
                 <div className="mt-6 p-4 rounded-xl bg-[#6366F1]/5 border border-[#6366F1]/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Zap className="w-4 h-4 text-[#6366F1]" />
-                    <p className="text-sm font-medium text-[#6366F1]">Demo Mode Active</p>
+                    <p className="text-sm font-medium text-[#6366F1]">Demo Mode Available</p>
                   </div>
-                  <p className="text-sm text-[var(--foreground-muted)]">No authentication required. Click any role to explore.</p>
+                  <p className="text-sm text-[var(--foreground-muted)]">
+                    Use demo credentials below or configure Supabase for real authentication.
+                  </p>
+                </div>
+
+                {/* Demo Credentials */}
+                <div className="mt-4 p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
+                  <p className="text-xs font-semibold text-[var(--foreground-muted)] uppercase tracking-wider mb-3 text-center">Demo Credentials (password: demo123)</p>
+                  <div className="grid grid-cols-3 gap-4 text-sm text-center">
+                    <div>
+                      <p className="text-[var(--foreground-muted)]">Advertiser</p>
+                      <p className="text-[var(--foreground)] font-mono text-xs">sarah@tunaiku.com</p>
+                    </div>
+                    <div>
+                      <p className="text-[var(--foreground-muted)]">Partner</p>
+                      <p className="text-[var(--foreground)] font-mono text-xs">media@kompas.com</p>
+                    </div>
+                    <div>
+                      <p className="text-[var(--foreground-muted)]">Admin</p>
+                      <p className="text-[var(--foreground)] font-mono text-xs">admin@cuanpintar.com</p>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             ) : (
@@ -195,7 +285,7 @@ export default function LoginPage() {
                       </div>
                       <div>
                         <h2 className="text-xl font-semibold text-[var(--foreground)] capitalize">{selectedRole} Portal</h2>
-                        <p className="text-sm text-[var(--foreground-muted)]">Enter your credentials to continue</p>
+                        <p className="text-sm text-[var(--foreground-muted)]">Enter your credentials</p>
                       </div>
                     </>
                   )}
@@ -204,57 +294,69 @@ export default function LoginPage() {
                 {/* Login Form */}
                 <Card className="p-6">
                   <CardContent className="space-y-4 p-0">
-                    <div>
-                      <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Email</label>
-                      <Input
-                        type="email"
-                        placeholder="email@example.com"
-                        defaultValue={selectedRole === 'advertiser' ? 'sarah@tunaiku.com' : selectedRole === 'partner' ? 'budi@jakselnews.com' : 'admin@cuanpintar.com'}
-                        className="h-12"
-                      />
-                    </div>
+                    <form onSubmit={handleLogin}>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Email</label>
+                        <Input
+                          type="email"
+                          placeholder="email@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-12"
+                          required
+                        />
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Password</label>
-                      <Input type="password" placeholder="Enter password" defaultValue="demo123" className="h-12" />
-                    </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Password</label>
+                        <Input
+                          type="password"
+                          placeholder="Enter password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="h-12"
+                          required
+                        />
+                      </div>
 
-                    <div className="flex items-center justify-between text-sm">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 rounded border-[var(--border)] bg-[var(--card)]" />
-                        <span className="text-[var(--foreground-muted)]">Remember me</span>
-                      </label>
-                      <a href="#" className="text-[#6366F1] hover:underline">Forgot password?</a>
-                    </div>
+                      {/* Error Message */}
+                      {error && (
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {error}
+                        </div>
+                      )}
 
-                    <Button onClick={handleDemoLogin} disabled={isLoading} className="w-full h-12 text-base font-semibold">
-                      {isLoading ? (
-                        <span className="flex items-center gap-2">
-                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 0h12a8 8 0 010 16z" /></svg>
-                          Signing in...
-                        </span>
-                      ) : 'Sign In'}
-                    </Button>
+                      <div className="flex items-center justify-between text-sm">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" className="w-4 h-4 rounded border-[var(--border)] bg-[var(--card)]" />
+                          <span className="text-[var(--foreground-muted)]">Remember me</span>
+                        </label>
+                        <Link href="/forgot-password" className="text-[#6366F1] hover:underline">Forgot password?</Link>
+                      </div>
+
+                      <Button type="submit" disabled={isLoading} className="w-full h-12 text-base font-semibold mt-4">
+                        {isLoading ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="animate-spin h-5 w-5" />
+                            Signing in...
+                          </span>
+                        ) : 'Sign In'}
+                      </Button>
+                    </form>
                   </CardContent>
                 </Card>
 
-                {/* Demo Credentials */}
-                <div className="mt-6 p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <p className="text-xs font-semibold text-[var(--foreground-muted)] uppercase tracking-wider mb-3 text-center">Demo Credentials</p>
-                  <div className="grid grid-cols-3 gap-4 text-sm text-center">
-                    <div>
-                      <p className="text-[var(--foreground-muted)]">Advertiser</p>
-                      <p className="text-[var(--foreground)] font-mono text-xs">sarah@tunaiku.com</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--foreground-muted)]">Partner</p>
-                      <p className="text-[var(--foreground)] font-mono text-xs">budi@jakselnews.com</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--foreground-muted)]">Admin</p>
-                      <p className="text-[var(--foreground)] font-mono text-xs">admin@cuanpintar.com</p>
-                    </div>
+                {/* Demo Mode Quick Access */}
+                <div className="mt-6 p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-[#F59E0B]" />
+                    <p className="text-sm font-medium text-[#F59E0B]">Quick Demo Access</p>
                   </div>
+                  <p className="text-sm text-[var(--foreground-muted)] mb-3">Click to login as {selectedRole} without password:</p>
+                  <Button onClick={handleDemoLogin} variant="outline" className="w-full h-10 text-sm border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#F59E0B]/10">
+                    Continue as {selectedRole} (Demo)
+                  </Button>
                 </div>
               </motion.div>
             )}
