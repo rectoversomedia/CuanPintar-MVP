@@ -222,6 +222,45 @@ export const api = {
       get('/media', { params }),
     get: (id: string) => get(`/media/${id}`),
   },
+
+  // Links (Tracking Links & QR)
+  links: {
+    list: (params?: {
+      partner_id?: string;
+      program_id?: string;
+      status?: string;
+      search?: string;
+      page?: number;
+      limit?: number;
+    }) => get('/links', { params }),
+    get: (id: string) => get(`/links/${id}`),
+    create: (data: {
+      program_id: string;
+      channel_type: string;
+      title?: string;
+      description?: string;
+      utm_source?: string;
+      utm_medium?: string;
+      utm_campaign?: string;
+    }) => post('/links', data),
+    update: (id: string, data: { title?: string; description?: string; is_active?: boolean }) =>
+      put(`/links/${id}`, data),
+    delete: (id: string) => del(`/links/${id}`),
+
+    // Stats
+    stats: (id: string, params?: { days?: number }) =>
+      get(`/links/${id}/stats`, { params }),
+
+    // QR Code
+    qr: (id: string, params?: {
+      format?: string;
+      size?: number;
+      margin?: number;
+      fg?: string;
+      bg?: string;
+      error?: string;
+    }) => get(`/links/${id}/qr`, { params }),
+  },
 };
 
 export default api;

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Copy, Check, ExternalLink, Download, FileText, Image, Link2, File, AlertCircle, Info, Calendar, Target, DollarSign, Users, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Copy, Check, ExternalLink, Download, FileText, Image, Link2, File, AlertCircle, Info, Calendar, Target, DollarSign, Users, TrendingUp, QrCode, Share2, MessageCircle } from 'lucide-react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { QRCodeGenerator } from '@/components/ui/qr-code';
 import { mockPrograms, formatCurrency, formatDate } from '@/lib/mock-data';
 import { getStatusColor, getObjectiveLabel, getChannelLabel } from '@/lib/utils';
 
@@ -41,7 +43,9 @@ export default function ProgramDetailPage() {
   const programId = params.id as string;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [trackingLink, setTrackingLink] = useState(`https://cuanpintar.com/track/${programId}/partner_1`);
+  const [shortLink, setShortLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isQRDialogOpen, setIsQRDialogOpen] = useState(false);
 
   const program = mockPrograms.find((p) => p.id === programId) || mockPrograms[0];
 
@@ -49,6 +53,31 @@ export default function ProgramDetailPage() {
     navigator.clipboard.writeText(trackingLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyShortLink = () => {
+    navigator.clipboard.writeText(shortLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const generateShortLink = () => {
+    // In real app, this would call the API
+    const code = Math.random().toString(36).substring(2, 10);
+    setShortLink(`https://cuanpintar.com/r/${code}`);
+    navigator.clipboard.writeText(shortLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareToWhatsApp = () => {
+    const message = `Check out this link! ${shortLink || trackingLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const shareToTelegram = () => {
+    const message = `Check out this link! ${shortLink || trackingLink}`;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(shortLink || trackingLink)}&text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const getAssetIcon = (type: string) => {
@@ -152,74 +181,169 @@ export default function ProgramDetailPage() {
 
             {/* Tracking Link Tab */}
             <TabsContent value="tracking">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Link2 className="h-5 w-5 text-blue-500" />
-                    Your Tracking Link
-                  </CardTitle>
-                  <CardDescription>
-                    Use this unique link to track your conversions. Share it across your channels.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={trackingLink}
-                      onChange={(e) => setTrackingLink(e.target.value)}
-                      className="font-mono text-sm flex-1"
-                      readOnly
-                    />
-                    <Button onClick={handleCopyLink} variant={copied ? 'success' : 'default'}>
-                      {copied ? (
-                        <>
-                          <Check className="h-4 w-4 mr-2" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Copy Link
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-blue-500 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-blue-900">How to use your tracking link</p>
-                        <ul className="text-sm text-blue-700 mt-2 space-y-1">
-                          <li>Add this link to your website, social media posts, or emails</li>
-                          <li>Each conversion will be tracked and attributed to your account</li>
-                          <li>You can customize the link parameters using UTM codes</li>
-                        </ul>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Main Tracking Link Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Link2 className="h-5 w-5 text-blue-500" />
+                      Your Tracking Link
+                    </CardTitle>
+                    <CardDescription>
+                      Use this unique link to track your conversions. Share it across your channels.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Full Tracking Link */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-700">Tracking URL</p>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={trackingLink}
+                          readOnly
+                          className="font-mono text-sm flex-1"
+                        />
+                        <Button onClick={handleCopyLink} variant={copied ? 'success' : 'default'} size="sm">
+                          {copied ? <><Check className="h-4 w-4 mr-1" /> Copied!</> : <><Copy className="h-4 w-4 mr-1" /> Copy</>}
+                        </Button>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">UTM Source</p>
-                      <Input placeholder="e.g., instagram" className="font-mono text-sm" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">UTM Medium</p>
-                      <Input placeholder="e.g., social" className="font-mono text-sm" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">UTM Campaign</p>
-                      <Input placeholder="e.g., summer_2024" className="font-mono text-sm" />
-                    </div>
-                  </div>
+                    {/* Short Link (Generated) */}
+                    {shortLink && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-700">Short URL</p>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={shortLink}
+                            readOnly
+                            className="font-mono text-sm flex-1 bg-green-50 border-green-200"
+                          />
+                          <Button onClick={handleCopyShortLink} variant="outline" size="sm">
+                            {copied ? <><Check className="h-4 w-4 mr-1" /> Copied!</> : <><Copy className="h-4 w-4 mr-1" /> Copy</>}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
 
-                  <Button variant="outline" className="w-full">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Generate Short Link
-                  </Button>
-                </CardContent>
-              </Card>
+                    {/* Info Box */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <Info className="h-5 w-5 text-blue-500 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-900">How to use your tracking link</p>
+                          <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                            <li>Add this link to your website, social media posts, or emails</li>
+                            <li>Each conversion will be tracked and attributed to your account</li>
+                            <li>You can customize the link parameters using UTM codes</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* UTM Parameters */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">UTM Source</p>
+                        <Input placeholder="e.g., instagram" className="font-mono text-sm" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">UTM Medium</p>
+                        <Input placeholder="e.g., social" className="font-mono text-sm" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">UTM Campaign</p>
+                        <Input placeholder="e.g., summer_2024" className="font-mono text-sm" />
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" onClick={generateShortLink} className="w-full">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Generate Short Link
+                      </Button>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline">
+                              <QrCode className="h-4 w-4 mr-2" />
+                              QR Code
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Generate QR Code</DialogTitle>
+                            </DialogHeader>
+                            <QRCodeGenerator
+                              linkId={programId}
+                              url={shortLink || trackingLink}
+                              title={program.name}
+                              defaultSize={300}
+                              showPreview={true}
+                            />
+                          </DialogContent>
+                        </Dialog>
+
+                        <Button variant="outline" onClick={shareToWhatsApp}>
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          WhatsApp
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* QR Code Preview Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <QrCode className="h-5 w-5 text-purple-500" />
+                      Quick QR Preview
+                    </CardTitle>
+                    <CardDescription>
+                      Scan to test your tracking link
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center justify-center py-8">
+                    <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
+                      <DialogTrigger asChild>
+                        <button className="p-4 bg-white border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 transition-colors cursor-pointer">
+                          <QrCode className="h-32 w-32 text-gray-400" />
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Generate QR Code</DialogTitle>
+                        </DialogHeader>
+                        <QRCodeGenerator
+                          linkId={programId}
+                          url={shortLink || trackingLink}
+                          title={program.name}
+                          defaultSize={300}
+                          showPreview={true}
+                        />
+                      </DialogContent>
+                    </Dialog>
+
+                    <p className="text-sm text-gray-500 mt-4 text-center">
+                      Click to generate QR code with your tracking link
+                    </p>
+
+                    <div className="flex gap-2 mt-4">
+                      <Button variant="outline" size="sm" onClick={shareToWhatsApp}>
+                        <MessageCircle className="h-4 w-4 mr-1" />
+                        Share
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={shareToTelegram}>
+                        <Share2 className="h-4 w-4 mr-1" />
+                        Telegram
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Assets Tab */}

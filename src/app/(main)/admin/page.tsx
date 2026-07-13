@@ -23,16 +23,9 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mockAdminDashboard, mockAdvertisers, mockPartners, mockPrograms, mockConversions, formatCurrency, formatNumber } from '@/lib/mock-data';
 
-// Brand Colors (CuanPintar)
-const colors = {
-  primary: '#FF6B35', // Orange (cuan)
-  secondary: '#0066FF', // Blue (pintar)
-  success: '#22C55E',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  purple: '#8B5CF6',
-  pink: '#EC4899',
-};
+// Using CSS variables from globals.css for consistent theming
+// Primary: #6366F1 (Indigo), Secondary: #8B5CF6 (Purple)
+// Note: Orange (#FF6B35) and Blue (#0066FF) from older design removed for consistency
 
 export default function AdminDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -43,34 +36,34 @@ export default function AdminDashboard() {
       label: 'Active Advertisers',
       value: dashboard.active_advertisers,
       icon: Building,
-      color: colors.secondary,
-      bgGradient: 'from-blue-500/10 to-blue-600/5',
-      borderColor: 'border-blue-200',
+      color: 'var(--primary)',
+      bgGradient: 'from-primary-500/10 to-primary-600/5',
+      borderColor: 'border-primary-200',
       href: '/admin/advertisers',
     },
     {
       label: 'Active Partners',
       value: dashboard.active_partners,
       icon: Users,
-      color: colors.purple,
-      bgGradient: 'from-purple-500/10 to-purple-600/5',
-      borderColor: 'border-purple-200',
+      color: 'var(--secondary)',
+      bgGradient: 'from-secondary-500/10 to-secondary-600/5',
+      borderColor: 'border-secondary-200',
       href: '/admin/partners',
     },
     {
       label: 'Active Programs',
       value: dashboard.active_programs,
       icon: ChartBar,
-      color: colors.primary,
-      bgGradient: 'from-orange-500/10 to-orange-600/5',
-      borderColor: 'border-orange-200',
+      color: 'var(--primary)',
+      bgGradient: 'from-primary-500/10 to-primary-600/5',
+      borderColor: 'border-primary-200',
       href: '/admin/programs',
     },
     {
       label: 'Fraud Alerts',
       value: dashboard.fraud_alerts,
       icon: ShieldCheck,
-      color: colors.danger,
+      color: 'var(--danger)',
       bgGradient: 'from-red-500/10 to-red-600/5',
       borderColor: 'border-red-200',
       href: '/admin/fraud',
@@ -78,36 +71,36 @@ export default function AdminDashboard() {
   ];
 
   const metrics = [
-    { label: 'Total Revenue', value: formatCurrency(dashboard.platform_revenue), color: colors.success },
-    { label: 'Total Payouts', value: formatCurrency(dashboard.total_payouts), color: colors.secondary },
-    { label: 'Avg CPA', value: formatCurrency(27500), color: colors.purple },
-    { label: 'Conversion Rate', value: '3.2%', color: colors.primary },
+    { label: 'Total Revenue', value: formatCurrency(dashboard.platform_revenue), color: 'var(--success)' },
+    { label: 'Total Payouts', value: formatCurrency(dashboard.total_payouts), color: 'var(--secondary)' },
+    { label: 'Avg CPA', value: formatCurrency(27500), color: 'var(--primary)' },
+    { label: 'Conversion Rate', value: '3.2%', color: 'var(--success)' },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-[var(--background-secondary)]">
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       <div className={`transition-all duration-300 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-[260px]'}`}>
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4">
+        <header className="sticky top-0 z-30 bg-[var(--card)]/80 backdrop-blur-md border-b border-[var(--border)] px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="text-center flex-1">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-[#FF6B35] to-[#0066FF] bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] bg-clip-text text-transparent">
                 Admin Overview
               </h1>
-              <p className="text-sm text-gray-500">Platform-wide monitoring and management</p>
+              <p className="text-sm text-[var(--foreground-muted)]">Platform-wide monitoring and management</p>
             </div>
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="relative">
-                <Bell size={22} weight="duotone" className="text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF6B35] rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+                <Bell size={22} weight="duotone" className="text-[var(--foreground-muted)]" />
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--primary)] rounded-full text-[10px] font-bold text-white flex items-center justify-center">
                   3
                 </span>
               </Button>
               <Avatar className="h-9 w-9">
                 <AvatarImage src="/api/placeholder/36/36" />
-                <AvatarFallback className="bg-gradient-to-br from-[#FF6B35] to-[#0066FF] text-white font-semibold text-sm">
+                <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white font-semibold text-sm">
                   AD
                 </AvatarFallback>
               </Avatar>
@@ -129,8 +122,8 @@ export default function AdminDashboard() {
 
                   <div className="relative flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-500 mb-1">{stat.label}</p>
-                      <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                      <p className="text-sm font-medium text-[var(--foreground-muted)] mb-1">{stat.label}</p>
+                      <p className="text-3xl font-bold text-[var(--foreground)]">{stat.value}</p>
                     </div>
                     <div
                       className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
@@ -251,27 +244,26 @@ export default function AdminDashboard() {
                 {mockAdvertisers.slice(0, 4).map((advertiser, index) => (
                   <div
                     key={advertiser.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100 hover:border-[#0066FF]/30 hover:shadow-md transition-all duration-200"
+                    className="flex items-center justify-between p-4 rounded-xl bg-[var(--card)] border border-[var(--border)] hover:border-[var(--primary)]/30 hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-md"
-                        style={{ background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})` }}
+                        className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-md bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)]"
                       >
                         {advertiser.company_name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{advertiser.company_name}</p>
-                        <p className="text-sm text-gray-500">{advertiser.industry}</p>
+                        <p className="font-semibold text-[var(--foreground)]">{advertiser.company_name}</p>
+                        <p className="text-sm text-[var(--foreground-muted)]">{advertiser.industry}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <Badge
-                        className={advertiser.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}
+                        className={advertiser.status === 'active' ? 'bg-[var(--success-light)] text-[var(--success-foreground)]' : 'bg-[var(--warning-light)] text-[var(--warning-foreground)]'}
                       >
                         {advertiser.status}
                       </Badge>
-                      <p className="text-xs text-gray-400 mt-1">{advertiser.active_programs} programs</p>
+                      <p className="text-xs text-[var(--foreground-subtle)] mt-1">{advertiser.active_programs} programs</p>
                     </div>
                   </div>
                 ))}

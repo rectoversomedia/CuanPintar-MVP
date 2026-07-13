@@ -2,13 +2,40 @@
  * CuanPintar - Fraud Detection Engine
  * Phase 3: Tracking & Attribution
  *
- * Real-time fraud detection using configurable rules
+ * Real-time fraud detection with:
+ * - Multi-signal detection
+ * - Partner fraud rate tracking
+ * - Configurable thresholds
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
+export type FraudSignalType =
+  | 'duplicate_ip'
+  | 'duplicate_device'
+  | 'suspicious_velocity'
+  | 'invalid_phone'
+  | 'invalid_email'
+  | 'emulator_suspected'
+  | 'proxy_vpn'
+  | 'low_engagement'
+  | 'headless_browser'
+  | 'disposable_email'
+  | 'same_device_different_time'
+  | 'geo_mismatch'
+  | 'isp_datacenter'
+  | 'no_referrer'
+  | 'bot_pattern'
+  | 'rapid_fire_clicks'
+  | 'missing_fingerprint'
+  | 'ip_blocklisted'
+  | 'device_blocklisted'
+  | 'email_domain_blocklisted'
+  | 'high_partner_fraud_rate'
+  | 'elevated_partner_fraud_rate';
+
 export interface FraudSignal {
-  type: string;
+  type: FraudSignalType;
   score: number;
   action: 'block' | 'flag' | 'score';
   details: Record<string, unknown>;
@@ -17,12 +44,21 @@ export interface FraudSignal {
 export interface FraudCheckResult {
   isBlocked: boolean;
   isFlagged: boolean;
+  isRejected: boolean;
   totalScore: number;
   signals: FraudSignal[];
+  reasons: string[];
   shouldReject: boolean;
+  shouldFlag: boolean;
+  recommendation: 'approve' | 'review' | 'reject';
 }
 
 export interface ConversionContext {
+  // Required
+  partner_id: string;
+  program_id: string;
+
+  // User data
   ip_address?: string;
   fingerprint?: string;
   email?: string;
@@ -30,10 +66,64 @@ export interface ConversionContext {
   phone?: string;
   device_id?: string;
   user_agent?: string;
+  referrer?: string;
+
+  // Time-based
+  timestamp?: Date;
+
+  // Conversion counts
   conversion_count_24h?: number;
   ip_conversion_count_24h?: number;
   fingerprint_conversion_count_24h?: number;
+  device_conversion_count_24h?: number;
+  partner_conversion_count_24h?: number;
+
+  // Partner stats
+  partner_fraud_rate?: number;
+  partner_total_conversions?: number;
 }
+
+// Fraud thresholds
+const FRAUD_THRESHOLDS = {
+  // Blocking thresholds
+  MAX_IP_CONVERSIONS_1H: 3, // Max 3 conversions per IP per hour
+  MAX_DEVICE_CONVERSIONS_1H: 2, // Max 2 per device per hour
+  MAX_FINGERPRINT_CONVERSIONS_1H: 5,
+
+  // Flagging thresholds
+  MAX_IP_CONVERSIONS_24H: 10,
+  MAX_DEVICE_CONVERSIONS_24H: 5,
+  MAX_PARTNER_VELOCITY_1H: 20, // Partner sending too fast
+
+  // Score thresholds
+  BLOCK_SCORE: 80,
+  REJECT_SCORE: 60,
+  FLAG_SCORE: 30,
+
+  // Partner fraud rate
+  HIGH_FRAUD_RATE: 10, // 10% = suspicious
+  CRITICAL_FRAUD_RATE: 20, // 20% = block conversions
+};
+
+// Disposable email domains
+const DISPOSABLE_DOMAINS = [
+  'tempmail.com', 'throwaway.com', 'guerrillamail.com', 'mailinator.com',
+  '10minutemail.com', 'fakeinbox.com', 'trash-mail.com', 'getnada.com',
+  'maildrop.cc', 'yopmail.com', 'sharklasers.com', 'guerrillamailblock.com',
+  'spam4.me', 'grr.la', 'mailnesia.com', 'temp-mail.org', 'emailondeck.com',
+];
+
+// Headless browser patterns
+const HEADLESS_PATTERNS = [
+  'HeadlessChrome', 'PhantomJS', 'Selenium', 'Puppeteer',
+  'Playwright', 'Automation', 'webdriver', 'Nightmare',
+];
+
+// Datacenter ISPs
+const DATACENTER_ISPS = [
+  'aws', 'google cloud', 'digitalocean', 'linode', 'vultr',
+  'azure', 'heroku', 'cloudflare', 'OVH', 'Hetzner',
+];
 
 /**
  * Check if IP is in blocklist
@@ -148,17 +238,22 @@ export async function getIPConversionCount(
 }
 
 /**
- * Main fraud check function
+ * Main fraud check function - comprehensive detection
  */
 export async function checkFraud(
   context: ConversionContext
 ): Promise<FraudCheckResult> {
   const signals: FraudSignal[] = [];
+  const reasons: string[] = [];
   let totalScore = 0;
   let isBlocked = false;
   let isFlagged = false;
 
-  // Check 1: IP Blocklist
+  // ========================================
+  // 1. BLOCKLIST CHECKS
+  // ========================================
+
+  // Check IP blocklist
   if (context.ip_address) {
     const ipBlocked = await isIPBlocked(context.ip_address);
     if (ipBlocked) {
@@ -168,44 +263,12 @@ export async function checkFraud(
         action: 'block',
         details: { ip: context.ip_address },
       });
+      reasons.push('IP address is blocklisted');
       isBlocked = true;
     }
   }
 
-  // Check 2: Email Domain Blocklist
-  if (context.email_domain) {
-    const domainBlocked = await isEmailDomainBlocked(context.email_domain);
-    if (domainBlocked) {
-      signals.push({
-        type: 'email_domain_blocklisted',
-        score: 50,
-        action: 'flag',
-        details: { domain: context.email_domain },
-      });
-      totalScore += 50;
-      isFlagged = true;
-    }
-  }
-
-  // Check 3: Disposable email check
-  if (context.email) {
-    const domain = context.email.split('@')[1]?.toLowerCase();
-    if (domain) {
-      const isDisposable = await isEmailDomainBlocked(domain);
-      if (isDisposable) {
-        signals.push({
-          type: 'disposable_email',
-          score: 30,
-          action: 'flag',
-          details: { domain },
-        });
-        totalScore += 30;
-        isFlagged = true;
-      }
-    }
-  }
-
-  // Check 4: Device Blocklist
+  // Check device fingerprint blocklist
   if (context.fingerprint) {
     const deviceBlocked = await isDeviceBlocked(context.fingerprint);
     if (deviceBlocked) {
@@ -215,45 +278,147 @@ export async function checkFraud(
         action: 'block',
         details: { fingerprint: context.fingerprint },
       });
+      reasons.push('Device fingerprint is blocklisted');
       isBlocked = true;
     }
   }
 
-  // Check 5: High Velocity - Fingerprint
-  if (context.fingerprint && context.fingerprint_conversion_count_24h !== undefined) {
-    if (context.fingerprint_conversion_count_24h > 10) {
+  // ========================================
+  // 2. EMAIL CHECKS
+  // ========================================
+
+  // Disposable email
+  if (context.email) {
+    const domain = context.email.split('@')[1]?.toLowerCase();
+    if (domain && DISPOSABLE_DOMAINS.includes(domain)) {
       signals.push({
-        type: 'high_velocity_fingerprint',
-        score: 40,
-        action: 'flag',
-        details: { count: context.fingerprint_conversion_count_24h },
+        type: 'disposable_email',
+        score: 80,
+        action: 'block',
+        details: { email: context.email, domain },
       });
-      totalScore += 40;
+      reasons.push(`Disposable email domain: ${domain}`);
+      isBlocked = true;
+    }
+  }
+
+  // Email domain blocklist
+  if (context.email_domain) {
+    const domainBlocked = await isEmailDomainBlocked(context.email_domain);
+    if (domainBlocked) {
+      signals.push({
+        type: 'email_domain_blocklisted',
+        score: 50,
+        action: 'flag',
+        details: { domain: context.email_domain },
+      });
+      reasons.push(`Email domain blocklisted: ${context.email_domain}`);
+      totalScore += 50;
       isFlagged = true;
     }
   }
 
-  // Check 6: High Velocity - IP
-  if (context.ip_address && context.ip_conversion_count_24h !== undefined) {
-    if (context.ip_conversion_count_24h > 20) {
+  // Invalid email format
+  if (context.email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(context.email)) {
       signals.push({
-        type: 'high_velocity_ip',
+        type: 'invalid_email',
         score: 30,
         action: 'flag',
-        details: { count: context.ip_conversion_count_24h },
+        details: { email: context.email },
       });
+      reasons.push('Invalid email format');
       totalScore += 30;
       isFlagged = true;
     }
   }
 
-  // Check 7: Suspicious User-Agent (headless browsers)
+  // ========================================
+  // 3. DEVICE/IP VELOCITY CHECKS
+  // ========================================
+
+  // Duplicate IP check
+  if (context.ip_address && context.ip_conversion_count_24h !== undefined) {
+    if (context.ip_conversion_count_24h >= FRAUD_THRESHOLDS.MAX_IP_CONVERSIONS_1H) {
+      signals.push({
+        type: 'duplicate_ip',
+        score: 60,
+        action: 'flag',
+        details: {
+          ip: context.ip_address,
+          count: context.ip_conversion_count_24h,
+          threshold: FRAUD_THRESHOLDS.MAX_IP_CONVERSIONS_1H,
+        },
+      });
+      reasons.push(`Duplicate IP: ${context.ip_conversion_count_24h} conversions`);
+      totalScore += 60;
+      isFlagged = true;
+    }
+  }
+
+  // Duplicate device check
+  if (context.device_id && context.device_conversion_count_24h !== undefined) {
+    if (context.device_conversion_count_24h >= FRAUD_THRESHOLDS.MAX_DEVICE_CONVERSIONS_1H) {
+      signals.push({
+        type: 'duplicate_device',
+        score: 70,
+        action: 'flag',
+        details: {
+          device_id: context.device_id,
+          count: context.device_conversion_count_24h,
+          threshold: FRAUD_THRESHOLDS.MAX_DEVICE_CONVERSIONS_1H,
+        },
+      });
+      reasons.push(`Duplicate device: ${context.device_conversion_count_24h} conversions`);
+      totalScore += 70;
+      isFlagged = true;
+    }
+  }
+
+  // Fingerprint velocity
+  if (context.fingerprint && context.fingerprint_conversion_count_24h !== undefined) {
+    if (context.fingerprint_conversion_count_24h > FRAUD_THRESHOLDS.MAX_FINGERPRINT_CONVERSIONS_1H) {
+      signals.push({
+        type: 'suspicious_velocity',
+        score: 50,
+        action: 'flag',
+        details: {
+          fingerprint: context.fingerprint,
+          count: context.fingerprint_conversion_count_24h,
+        },
+      });
+      reasons.push(`High fingerprint velocity: ${context.fingerprint_conversion_count_24h}`);
+      totalScore += 50;
+      isFlagged = true;
+    }
+  }
+
+  // Partner sending too fast
+  if (context.partner_conversion_count_24h !== undefined) {
+    if (context.partner_conversion_count_24h > FRAUD_THRESHOLDS.MAX_PARTNER_VELOCITY_1H) {
+      signals.push({
+        type: 'rapid_fire_clicks',
+        score: 40,
+        action: 'flag',
+        details: {
+          partner_id: context.partner_id,
+          count: context.partner_conversion_count_24h,
+        },
+      });
+      reasons.push(`Partner high velocity: ${context.partner_conversion_count_24h}/hr`);
+      totalScore += 40;
+      isFlagged = true;
+    }
+  }
+
+  // ========================================
+  // 4. BROWSER/DEVICE CHECKS
+  // ========================================
+
+  // Headless browser detection
   if (context.user_agent) {
-    const headlessPatterns = [
-      'HeadlessChrome', 'PhantomJS', 'Selenium', 'Puppeteer',
-      'Playwright', 'Automation', 'webdriver',
-    ];
-    const isHeadless = headlessPatterns.some(p =>
+    const isHeadless = HEADLESS_PATTERNS.some(p =>
       context.user_agent?.includes(p)
     );
     if (isHeadless) {
@@ -263,23 +428,195 @@ export async function checkFraud(
         action: 'block',
         details: { user_agent: context.user_agent },
       });
+      reasons.push('Headless browser detected');
       isBlocked = true;
     }
   }
 
-  // Check 8: VPN/Proxy detection (would integrate with MaxMind or similar)
-  // This would require external service or database
+  // Missing fingerprint
+  if (!context.fingerprint || context.fingerprint.length < 10) {
+    signals.push({
+      type: 'missing_fingerprint',
+      score: 25,
+      action: 'flag',
+      details: {},
+    });
+    reasons.push('Missing or invalid fingerprint');
+    totalScore += 25;
+    isFlagged = true;
+  }
 
-  // Decision: reject if blocked or score too high
-  const shouldReject = isBlocked || totalScore >= 80;
+  // No referrer (suspicious for some channels)
+  if (!context.referrer || context.referrer === '') {
+    signals.push({
+      type: 'no_referrer',
+      score: 10,
+      action: 'score',
+      details: {},
+    });
+    reasons.push('No referrer detected');
+    totalScore += 10;
+  }
+
+  // ========================================
+  // 5. PARTNER FRAUD RATE CHECK
+  // ========================================
+
+  if (context.partner_fraud_rate !== undefined) {
+    if (context.partner_fraud_rate >= FRAUD_THRESHOLDS.CRITICAL_FRAUD_RATE) {
+      signals.push({
+        type: 'high_partner_fraud_rate',
+        score: 50,
+        action: 'flag',
+        details: {
+          partner_id: context.partner_id,
+          fraud_rate: context.partner_fraud_rate,
+        },
+      });
+      reasons.push(`Partner fraud rate: ${context.partner_fraud_rate}% (critical)`);
+      totalScore += 50;
+      isFlagged = true;
+    } else if (context.partner_fraud_rate >= FRAUD_THRESHOLDS.HIGH_FRAUD_RATE) {
+      signals.push({
+        type: 'elevated_partner_fraud_rate',
+        score: 20,
+        action: 'score',
+        details: {
+          partner_id: context.partner_id,
+          fraud_rate: context.partner_fraud_rate,
+        },
+      });
+      reasons.push(`Partner fraud rate: ${context.partner_fraud_rate}%`);
+      totalScore += 20;
+    }
+  }
+
+  // ========================================
+  // 6. DECISION
+  // ========================================
+
+  // Block overrides everything
+  if (isBlocked) {
+    return {
+      isBlocked: true,
+      isFlagged: false,
+      isRejected: true,
+      totalScore,
+      signals,
+      reasons,
+      shouldReject: true,
+      shouldFlag: false,
+      recommendation: 'reject',
+    };
+  }
+
+  // Determine recommendation
+  let recommendation: 'approve' | 'review' | 'reject' = 'approve';
+
+  if (totalScore >= FRAUD_THRESHOLDS.REJECT_SCORE) {
+    recommendation = 'reject';
+  } else if (totalScore >= FRAUD_THRESHOLDS.FLAG_SCORE || isFlagged) {
+    recommendation = 'review';
+  }
 
   return {
     isBlocked,
-    isFlagged,
+    isFlagged: isFlagged || totalScore >= FRAUD_THRESHOLDS.FLAG_SCORE,
+    isRejected: recommendation === 'reject',
     totalScore,
     signals,
-    shouldReject,
+    reasons,
+    shouldReject: recommendation === 'reject',
+    shouldFlag: recommendation === 'review' || recommendation === 'reject',
+    recommendation,
   };
+}
+
+/**
+ * Quick fraud check (for real-time, less comprehensive)
+ */
+export function quickFraudCheck(context: ConversionContext): FraudCheckResult {
+  const signals: FraudSignal[] = [];
+  const reasons: string[] = [];
+  let totalScore = 0;
+
+  // Disposable email check
+  if (context.email) {
+    const domain = context.email.split('@')[1]?.toLowerCase();
+    if (domain && DISPOSABLE_DOMAINS.includes(domain)) {
+      signals.push({ type: 'disposable_email', score: 80, action: 'block', details: {} });
+      reasons.push('Disposable email');
+      return { isBlocked: true, isFlagged: true, isRejected: true, totalScore: 80, signals, reasons, shouldReject: true, shouldFlag: true, recommendation: 'reject' };
+    }
+  }
+
+  // Headless browser
+  if (context.user_agent) {
+    const isHeadless = HEADLESS_PATTERNS.some(p => context.user_agent?.includes(p));
+    if (isHeadless) {
+      signals.push({ type: 'headless_browser', score: 100, action: 'block', details: {} });
+      reasons.push('Headless browser');
+      return { isBlocked: true, isFlagged: true, isRejected: true, totalScore: 100, signals, reasons, shouldReject: true, shouldFlag: true, recommendation: 'reject' };
+    }
+  }
+
+  // High velocity
+  if (context.ip_conversion_count_24h && context.ip_conversion_count_24h > 5) {
+    signals.push({ type: 'suspicious_velocity', score: 40, action: 'flag', details: {} });
+    reasons.push('High IP velocity');
+    totalScore += 40;
+  }
+
+  if (context.fingerprint_conversion_count_24h && context.fingerprint_conversion_count_24h > 3) {
+    signals.push({ type: 'duplicate_device', score: 50, action: 'flag', details: {} });
+    reasons.push('High fingerprint velocity');
+    totalScore += 50;
+  }
+
+  // Partner fraud rate
+  if (context.partner_fraud_rate && context.partner_fraud_rate > 20) {
+    signals.push({ type: 'high_partner_fraud_rate', score: 50, action: 'flag', details: {} });
+    reasons.push(`Partner fraud rate: ${context.partner_fraud_rate}%`);
+    totalScore += 50;
+  }
+
+  const recommendation = totalScore >= 60 ? 'reject' : totalScore >= 30 ? 'review' : 'approve';
+
+  return {
+    isBlocked: false,
+    isFlagged: totalScore >= 30,
+    isRejected: recommendation === 'reject',
+    totalScore,
+    signals,
+    reasons,
+    shouldReject: recommendation === 'reject',
+    shouldFlag: recommendation === 'review' || recommendation === 'reject',
+    recommendation,
+  };
+}
+
+/**
+ * Calculate partner fraud rate
+ */
+export function calculatePartnerFraudRate(
+  totalConversions: number,
+  fraudConversions: number,
+  rejectedConversions: number
+): number {
+  if (totalConversions === 0) return 0;
+  return Math.round(((fraudConversions + rejectedConversions) / totalConversions) * 100 * 10) / 10;
+}
+
+/**
+ * Get fraud risk level from rate
+ */
+export function getFraudRiskLevel(
+  fraudRate: number
+): 'low' | 'medium' | 'high' | 'critical' {
+  if (fraudRate < 3) return 'low';
+  if (fraudRate < 10) return 'medium';
+  if (fraudRate < 20) return 'high';
+  return 'critical';
 }
 
 /**

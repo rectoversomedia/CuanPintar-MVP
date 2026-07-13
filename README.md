@@ -164,11 +164,13 @@ src/
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| Primary | `#0066FF` | Buttons, links, accent |
-| Sidebar | `#0a1628` | Navigation background |
-| Success | `#22C55E` | Valid conversions |
-| Warning | `#F59E0B` | Pending items |
-| Danger | `#EF4444` | Fraud, rejected |
+| Primary | `#6366F1` | Buttons, links, accent (Indigo) |
+| Secondary | `#8B5CF6` | Gradients, highlights (Purple) |
+| Accent | `#F43F5E` | Call-to-action (Rose) |
+| Sidebar | `#0F172A` | Navigation background (Dark Slate) |
+| Success | `#10B981` | Valid conversions (Green) |
+| Warning | `#F59E0B` | Pending items (Amber) |
+| Danger | `#EF4444` | Fraud, rejected (Red) |
 
 ## 🔐 Environment Variables
 

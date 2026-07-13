@@ -27,11 +27,11 @@ import {
   Clock,
   Megaphone,
   Bell,
-  Search,
   LogOut,
   ChevronLeft,
   Menu,
   X,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -43,15 +43,13 @@ const advertiserNav = [
   { label: 'Dashboard', href: '/advertiser', icon: LayoutDashboard },
   { label: 'Programs', href: '/advertiser/programs', icon: Target },
   { label: 'Partners', href: '/advertiser/partners', icon: Users },
-  { label: 'Distribution', href: '/advertiser/distribution', icon: Share2 },
   { label: 'Conversions', href: '/advertiser/conversions', icon: ShoppingCart, badge: 24 },
   { label: 'Analytics', href: '/advertiser/analytics', icon: BarChart3 },
   { label: 'Billing', href: '/advertiser/billing', icon: Receipt },
-  { label: 'Settings', href: '/advertiser/settings', icon: Settings },
 ];
 
 const partnerNav = [
-  { label: 'Dashboard', href: '/partner', icon: Store },
+  { label: 'Dashboard', href: '/partner', icon: LayoutDashboard },
   { label: 'Programs', href: '/partner/programs', icon: Package },
   { label: 'Assets', href: '/partner/assets', icon: Download },
   { label: 'Earnings', href: '/partner/earnings', icon: Wallet, badge: 3 },
@@ -70,9 +68,6 @@ const adminNav = [
   { label: 'Payouts', href: '/admin/payouts', icon: CreditCard },
   { label: 'Tickets', href: '/admin/tickets', icon: MessageSquare, badge: 12 },
   { label: 'KYC', href: '/admin/kyc', icon: UserCheck },
-  { label: 'Audit Logs', href: '/admin/audit', icon: Clock },
-  { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
-  { label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 // Get user data from localStorage (demo mode)
@@ -133,6 +128,32 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
+  // Get page title
+  const getPageTitle = () => {
+    const titles: Record<string, string> = {
+      '/admin': 'Dashboard Overview',
+      '/admin/advertisers': 'Advertisers',
+      '/admin/partners': 'Partners',
+      '/admin/programs': 'Programs',
+      '/admin/conversions': 'Conversions',
+      '/admin/fraud': 'Fraud Review',
+      '/advertiser': 'Dashboard',
+      '/advertiser/programs': 'Programs',
+      '/advertiser/partners': 'Partners',
+      '/advertiser/conversions': 'Conversions',
+      '/advertiser/analytics': 'Analytics',
+      '/partner': 'Dashboard',
+      '/partner/programs': 'Programs',
+      '/partner/earnings': 'Earnings',
+      '/partner/payouts': 'Payouts',
+      '/partner/profile': 'Profile',
+    };
+    for (const [path, title] of Object.entries(titles)) {
+      if (pathname === path) return title;
+    }
+    return 'Dashboard';
+  };
+
   return (
     <div className="min-h-screen bg-[var(--background)]">
       {/* Mobile Overlay */}
@@ -148,30 +169,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - Dark */}
       <motion.aside
         initial={{ x: -280 }}
         animate={{ x: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
           'fixed top-0 left-0 z-50 h-screen flex flex-col',
-          'bg-[var(--sidebar-bg)] border-r border-white/5',
+          'bg-[var(--sidebar-bg)]',
           'transition-all duration-300 ease-in-out',
           isCollapsed ? 'w-[72px]' : 'w-[260px]',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/5">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center shadow-lg">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-lg">C</span>
             </div>
             {!isCollapsed && (
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-lg font-bold text-white tracking-tight"
+                className="text-lg font-bold text-white"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 CuanPintar
@@ -205,128 +226,131 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   'text-sm font-medium transition-all duration-200',
                   'relative overflow-hidden',
                   isActive(item.href)
-                    ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary-600)] text-white shadow-lg shadow-[var(--primary)]/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                    ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg shadow-[#6366F1]/20'
+                    : 'text-[var(--sidebar-text-muted)] hover:text-white hover:bg-white/5'
                 )}
               >
-                {isActive(item.href) && (
-                  <motion.div
-                    layoutId="activeNav"
-                    className="absolute inset-0 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-600)]"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <item.icon className={cn('w-5 h-5 relative z-10', isCollapsed && 'mx-auto')} />
+                <item.icon className="w-5 h-5 flex-shrink-0" />
                 {!isCollapsed && (
-                  <span className="relative z-10">{item.label}</span>
-                )}
-                {item.badge && !isCollapsed && (
-                  <span className="ml-auto relative z-10 px-2 py-0.5 text-xs font-semibold rounded-full bg-white/20">
-                    {item.badge}
-                  </span>
+                  <>
+                    <span className="flex-1">{item.label}</span>
+                    {item.badge && (
+                      <Badge variant="destructive" size="sm" className="h-5 min-w-[20px] px-1.5">
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </>
                 )}
               </Link>
             </motion.div>
           ))}
         </nav>
 
-        {/* User Section */}
-        {user && (
-          <div className="p-3 border-t border-white/5">
-            <div className={cn(
-              'flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer',
-              isCollapsed && 'justify-center'
-            )}>
-              <Avatar size="sm" className="ring-2 ring-white/20">
-                <AvatarFallback className="text-xs">
-                  {user.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              {!isCollapsed && (
+        {/* Settings & Logout */}
+        <div className="p-3 border-t border-white/10">
+          {!isCollapsed && user && (
+            <div className="px-3 py-2 mb-2">
+              <div className="flex items-center gap-3">
+                <Avatar size="sm" className="ring-2 ring-white/20">
+                  <AvatarFallback className="bg-[#6366F1] text-white text-xs">
+                    {user.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user.name || 'User'}</p>
-                  <p className="text-xs text-white/50 truncate capitalize">{user.role}</p>
+                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                  <p className="text-xs text-[var(--sidebar-text-muted)] truncate">{user.email}</p>
                 </div>
-              )}
-              {!isCollapsed && (
-                <button
-                  onClick={handleLogout}
-                  className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              )}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Collapse Toggle (Desktop) */}
-        <div className="hidden lg:block p-3 border-t border-white/5">
+          )}
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--sidebar-text-muted)] hover:text-white hover:bg-white/5 transition-all"
           >
-            <ChevronLeft className={cn('w-4 h-4 transition-transform', isCollapsed && 'rotate-180')} />
-            {!isCollapsed && <span className="text-sm">Collapse</span>}
+            <LogOut className="w-5 h-5" />
+            {!isCollapsed && <span>Logout</span>}
           </button>
         </div>
+
+        {/* Collapse Toggle */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-[var(--sidebar-bg)] border border-white/20 items-center justify-center text-white/60 hover:text-white"
+        >
+          <ChevronLeft className={cn('w-4 h-4 transition-transform', isCollapsed && 'rotate-180')} />
+        </button>
       </motion.aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className={cn(
-        'min-h-screen transition-all duration-300',
-        isCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'
+        'min-h-screen flex flex-col',
+        'transition-all duration-300',
+        isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
       )}>
-        {/* Top Header */}
-        <header className="sticky top-0 z-40 h-16 bg-white/80 backdrop-blur-xl border-b border-[var(--border)]">
-          <div className="flex items-center justify-between h-full px-4 lg:px-6">
+        {/* Header */}
+        <header className="h-16 bg-[var(--card)] border-b border-[var(--border)] px-6 flex items-center justify-between sticky top-0 z-40">
+          <div className="flex items-center gap-4">
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileOpen(true)}
               className="lg:hidden p-2 rounded-lg hover:bg-[var(--background-secondary)]"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-5 h-5 text-[var(--foreground)]" />
+            </button>
+            <div>
+              <h1 className="text-lg font-semibold text-[var(--foreground)]">{getPageTitle()}</h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Quick Action Button */}
+            <Button size="sm" className="gap-2">
+              <Plus className="w-4 h-4" />
+              Create New
+            </Button>
+
+            {/* Notifications */}
+            <button className="relative p-2 rounded-lg hover:bg-[var(--background-secondary)]">
+              <Bell className="w-5 h-5 text-[var(--foreground-muted)]" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-[#EF4444] rounded-full" />
+              )}
             </button>
 
-            {/* Search */}
-            <div className="hidden md:flex items-center flex-1 max-w-md">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-subtle)]" />
-                <input
-                  type="text"
-                  placeholder="Search programs, partners, conversions..."
-                  className="w-full h-10 pl-10 pr-4 rounded-xl border border-[var(--border)] bg-[var(--background-secondary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Right Actions */}
-            <div className="flex items-center gap-2">
-              {/* Notifications */}
-              <div className="relative">
-                <button className="relative p-2 rounded-xl hover:bg-[var(--background-secondary)] transition-colors">
-                  <Bell className="w-5 h-5 text-[var(--foreground-muted)]" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[var(--danger)] text-white text-[10px] font-bold flex items-center justify-center">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* User Avatar (Mobile) */}
-              <Avatar size="sm" className="lg:hidden">
-                <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
-              </Avatar>
-            </div>
+            {/* User Avatar */}
+            <Avatar size="sm" className="cursor-pointer">
+              <AvatarFallback className="bg-[#6366F1] text-white text-xs">
+                {user?.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+              </AvatarFallback>
+            </Avatar>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-6">
+        <main className="flex-1 p-6">
           {children}
         </main>
+
+        {/* Footer */}
+        <footer className="bg-[var(--card)] border-t border-[var(--border)] px-6 py-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
+                <span className="text-white font-bold text-sm">C</span>
+              </div>
+              <span className="text-sm font-semibold text-[var(--foreground)]">CuanPintar</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-[var(--foreground-muted)]">
+              <Link href="/programs" className="hover:text-[var(--primary)]">Marketplace</Link>
+              <Link href="/how-it-works" className="hover:text-[var(--primary)]">How It Works</Link>
+              <Link href="/for-advertisers" className="hover:text-[var(--primary)]">For Advertisers</Link>
+              <Link href="/for-partners" className="hover:text-[var(--primary)]">For Partners</Link>
+            </div>
+            <p className="text-sm text-[var(--foreground-subtle)]">
+              © 2024 CuanPintar. All rights reserved.
+            </p>
+          </div>
+        </footer>
       </div>
     </div>
   );

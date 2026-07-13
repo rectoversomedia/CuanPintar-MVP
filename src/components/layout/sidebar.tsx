@@ -26,6 +26,8 @@ import {
   ChatCircle,
   UserCheck,
   ClockCounterClockwise,
+  Link as LinkIcon,
+  QrCode,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -55,6 +57,7 @@ const advertiserNav = [
 const partnerNav = [
   { label: 'Marketplace', href: '/partner', icon: <Storefront size={20} weight="duotone" /> },
   { label: 'My Programs', href: '/partner/programs', icon: <Package size={20} weight="duotone" /> },
+  { label: 'Links & QR', href: '/partner/links', icon: <LinkIcon size={20} weight="duotone" /> },
   { label: 'Assets', href: '/partner/assets', icon: <Download size={20} weight="duotone" /> },
   { label: 'Earnings', href: '/partner/earnings', icon: <Wallet size={20} weight="duotone" /> },
   { label: 'Payouts', href: '/partner/payouts', icon: <CreditCard size={20} weight="duotone" /> },

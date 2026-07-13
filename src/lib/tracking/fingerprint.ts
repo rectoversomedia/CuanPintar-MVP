@@ -73,8 +73,12 @@ export function detectPlatform(userAgent: string): string {
  * Detect device type
  */
 export function detectDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tablet' {
-  if (/iPad|Tablet|Android/.test(userAgent)) return 'tablet';
-  if (/Mobile|iPhone|Android/.test(userAgent)) return 'mobile';
+  // Check mobile first (iPhone, Mobile keyword)
+  if (/Mobile|iPhone/.test(userAgent)) return 'mobile';
+  // Check tablet (iPad or explicit Tablet keyword)
+  if (/iPad|Tablet/.test(userAgent)) return 'tablet';
+  // Android without Mobile is usually tablet
+  if (/Android/.test(userAgent)) return 'mobile';
   return 'desktop';
 }
 
@@ -82,11 +86,13 @@ export function detectDeviceType(userAgent: string): 'desktop' | 'mobile' | 'tab
  * Detect browser
  */
 export function detectBrowser(userAgent: string): string {
-  if (/Chrome/.test(userAgent) && !/Edg/.test(userAgent)) return 'Chrome';
+  // Check Opera before Chrome (Opera contains "Chrome" in UA)
+  if (/Opera|OPR/.test(userAgent)) return 'Opera';
+  // Check Edge before Chrome (Edge contains "Chrome" in UA)
+  if (/Edg/.test(userAgent)) return 'Edge';
+  if (/Chrome/.test(userAgent)) return 'Chrome';
   if (/Safari/.test(userAgent) && !/Chrome/.test(userAgent)) return 'Safari';
   if (/Firefox/.test(userAgent)) return 'Firefox';
-  if (/Edg/.test(userAgent)) return 'Edge';
-  if (/Opera|OPR/.test(userAgent)) return 'Opera';
   return 'Other';
 }
 
@@ -96,8 +102,9 @@ export function detectBrowser(userAgent: string): string {
 export function detectOS(userAgent: string): string {
   if (/Windows NT 10/.test(userAgent)) return 'Windows 10';
   if (/Windows NT 6/.test(userAgent)) return 'Windows 8';
-  if (/Mac OS X/.test(userAgent)) return 'macOS';
+  // Check iOS before Mac OS X (iPhone/iPad have "Mac OS X" in UA)
   if (/iPhone|iPad|iPod/.test(userAgent)) return 'iOS';
+  if (/Mac OS X/.test(userAgent)) return 'macOS';
   if (/Android/.test(userAgent)) return 'Android';
   if (/Linux/.test(userAgent)) return 'Linux';
   return 'Other';

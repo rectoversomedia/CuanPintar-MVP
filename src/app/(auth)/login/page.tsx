@@ -20,51 +20,15 @@ import { Input } from '@/components/ui/input';
 type Role = 'advertiser' | 'partner' | 'admin';
 
 const DEMO_USERS = [
-  {
-    id: 'adv_001',
-    email: 'sarah@tunaiku.com',
-    name: 'Sarah Wijaya',
-    role: 'advertiser' as Role,
-    companyName: 'Tunaiku',
-  },
-  {
-    id: 'part_001',
-    email: 'budi@jakselnews.com',
-    name: 'Budi Santoso',
-    role: 'partner' as Role,
-    companyName: 'JakselNews Media',
-  },
-  {
-    id: 'admin_001',
-    email: 'admin@cuanpintar.com',
-    name: 'Admin User',
-    role: 'admin' as Role,
-    companyName: 'CuanPintar',
-  },
+  { id: 'adv_001', email: 'sarah@tunaiku.com', name: 'Sarah Wijaya', role: 'advertiser' as Role, companyName: 'Tunaiku' },
+  { id: 'part_001', email: 'budi@jakselnews.com', name: 'Budi Santoso', role: 'partner' as Role, companyName: 'JakselNews Media' },
+  { id: 'admin_001', email: 'admin@cuanpintar.com', name: 'Admin User', role: 'admin' as Role, companyName: 'CuanPintar' },
 ];
 
 const roles = [
-  {
-    id: 'advertiser' as Role,
-    title: 'Advertiser',
-    description: 'Launch campaigns and manage partners',
-    icon: Building2,
-    gradient: 'from-[#6366F1] to-[#4F46E5]',
-  },
-  {
-    id: 'partner' as Role,
-    title: 'Partner',
-    description: 'Discover programs and earn commissions',
-    icon: Users,
-    gradient: 'from-[#8B5CF6] to-[#7C3AED]',
-  },
-  {
-    id: 'admin' as Role,
-    title: 'Admin',
-    description: 'Manage platform operations',
-    icon: ShieldCheck,
-    gradient: 'from-[#F43F5E] to-[#E11D48]',
-  },
+  { id: 'advertiser' as Role, title: 'Advertiser', description: 'Launch campaigns and manage partners', icon: Building2, gradient: 'from-[#6366F1] to-[#4F46E5]' },
+  { id: 'partner' as Role, title: 'Partner', description: 'Discover programs and earn commissions', icon: Users, gradient: 'from-[#8B5CF6] to-[#7C3AED]' },
+  { id: 'admin' as Role, title: 'Admin', description: 'Manage platform operations', icon: ShieldCheck, gradient: 'from-[#F43F5E] to-[#E11D48]' },
 ];
 
 const features = [
@@ -91,20 +55,16 @@ export default function LoginPage() {
 
     const user = DEMO_USERS.find((u) => u.role === selectedRole);
     localStorage.setItem('cp_user', JSON.stringify(user));
-    localStorage.setItem('cp_session', JSON.stringify({
-      demo: true,
-      role: selectedRole,
-      userId: user?.id
-    }));
+    localStorage.setItem('cp_session', JSON.stringify({ demo: true, role: selectedRole, userId: user?.id }));
 
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 500));
     router.push(`/${selectedRole}`);
   };
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex">
-      {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[var(--sidebar-bg)] p-12 flex-col justify-between relative overflow-hidden">
+      {/* Left Panel - Branding - Dark */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0F172A] p-12 flex-col justify-between relative overflow-hidden">
         {/* Background Gradient Orbs */}
         <div className="absolute top-0 left-0 w-96 h-96 bg-[#6366F1]/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#8B5CF6]/10 rounded-full blur-3xl" />
@@ -115,20 +75,13 @@ export default function LoginPage() {
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-[#6366F1]/20">
               <span className="text-white font-bold text-xl">C</span>
             </div>
-            <span className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
-              CuanPintar
-            </span>
+            <span className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>CuanPintar</span>
           </Link>
 
           {/* Hero Text */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-              Customer Acquisition OS
-              <br />
+              Customer Acquisition OS<br />
               <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#F43F5E] bg-clip-text text-transparent">
                 for Indonesia.
               </span>
@@ -158,22 +111,16 @@ export default function LoginPage() {
         </div>
 
         {/* Testimonial */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="relative z-10 border-t border-white/10 pt-6"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="relative z-10 border-t border-white/10 pt-6">
           <blockquote className="text-white/60 italic">
-            "CuanPintar transformed how we manage acquisition across multiple channels.
-            One program, everywhere."
+            "CuanPintar transformed how we manage acquisition across multiple channels. One program, everywhere."
           </blockquote>
           <p className="text-white mt-3 font-medium">Sarah Wijaya</p>
           <p className="text-white/40 text-sm">Marketing Director, Tunaiku</p>
         </motion.div>
       </div>
 
-      {/* Right Panel - Login Form */}
+      {/* Right Panel - Login Form - Light */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-[var(--background)]">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
@@ -181,38 +128,22 @@ export default function LoginPage() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
               <span className="text-white font-bold text-lg">C</span>
             </div>
-            <span className="text-xl font-bold text-[var(--foreground)]" style={{ fontFamily: 'var(--font-heading)' }}>
-              CuanPintar
-            </span>
+            <span className="text-xl font-bold text-[var(--foreground)]" style={{ fontFamily: 'var(--font-heading)' }}>CuanPintar</span>
           </div>
 
           <AnimatePresence mode="wait">
             {step === 'role' ? (
-              <motion.div
-                key="role-selection"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-              >
+              <motion.div key="role-selection" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
                 {/* Header */}
                 <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">
-                    Welcome Back
-                  </h2>
-                  <p className="text-[var(--foreground-muted)]">
-                    Select your role to continue
-                  </p>
+                  <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">Welcome Back</h2>
+                  <p className="text-[var(--foreground-muted)]">Select your role to continue</p>
                 </div>
 
                 {/* Role Cards */}
                 <div className="space-y-4">
                   {roles.map((role, i) => (
-                    <motion.div
-                      key={role.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                    >
+                    <motion.div key={role.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
                       <button
                         onClick={() => handleRoleSelect(role.id)}
                         className="w-full p-5 rounded-xl border border-[var(--border)] bg-[var(--card)] hover:border-[#6366F1] hover:shadow-lg hover:shadow-[#6366F1]/10 transition-all duration-300 text-left group"
@@ -238,23 +169,13 @@ export default function LoginPage() {
                     <Zap className="w-4 h-4 text-[#6366F1]" />
                     <p className="text-sm font-medium text-[#6366F1]">Demo Mode Active</p>
                   </div>
-                  <p className="text-sm text-[var(--foreground-muted)]">
-                    No authentication required. Click any role to explore.
-                  </p>
+                  <p className="text-sm text-[var(--foreground-muted)]">No authentication required. Click any role to explore.</p>
                 </div>
               </motion.div>
             ) : (
-              <motion.div
-                key="credentials"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
+              <motion.div key="credentials" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 {/* Back Button */}
-                <button
-                  onClick={() => setStep('role')}
-                  className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] mb-6 transition-colors"
-                >
+                <button onClick={() => setStep('role')} className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] mb-6 transition-colors">
                   <ArrowLeft className="w-4 h-4" />
                   Back to role selection
                 </button>
@@ -264,18 +185,11 @@ export default function LoginPage() {
                   {selectedRole && (
                     <>
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${roles.find(r => r.id === selectedRole)?.gradient} flex items-center justify-center text-white shadow-lg`}>
-                        {(() => {
-                          const RoleIcon = roles.find(r => r.id === selectedRole)?.icon;
-                          return RoleIcon ? <RoleIcon size={24} /> : null;
-                        })()}
+                        {(() => { const RoleIcon = roles.find(r => r.id === selectedRole)?.icon; return RoleIcon ? <RoleIcon size={24} /> : null; })()}
                       </div>
                       <div>
-                        <h2 className="text-xl font-semibold text-[var(--foreground)] capitalize">
-                          {selectedRole} Portal
-                        </h2>
-                        <p className="text-sm text-[var(--foreground-muted)]">
-                          Enter your credentials to continue
-                        </p>
+                        <h2 className="text-xl font-semibold text-[var(--foreground)] capitalize">{selectedRole} Portal</h2>
+                        <p className="text-sm text-[var(--foreground-muted)]">Enter your credentials to continue</p>
                       </div>
                     </>
                   )}
@@ -285,74 +199,43 @@ export default function LoginPage() {
                 <Card className="p-6">
                   <CardContent className="space-y-4 p-0">
                     <div>
-                      <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
-                        Email
-                      </label>
+                      <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Email</label>
                       <Input
                         type="email"
                         placeholder="email@example.com"
-                        defaultValue={
-                          selectedRole === 'advertiser'
-                            ? 'sarah@tunaiku.com'
-                            : selectedRole === 'partner'
-                            ? 'budi@jakselnews.com'
-                            : 'admin@cuanpintar.com'
-                        }
+                        defaultValue={selectedRole === 'advertiser' ? 'sarah@tunaiku.com' : selectedRole === 'partner' ? 'budi@jakselnews.com' : 'admin@cuanpintar.com'}
                         className="h-12"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
-                        Password
-                      </label>
-                      <Input
-                        type="password"
-                        placeholder="Enter password"
-                        defaultValue="demo123"
-                        className="h-12"
-                      />
+                      <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Password</label>
+                      <Input type="password" placeholder="Enter password" defaultValue="demo123" className="h-12" />
                     </div>
 
                     <div className="flex items-center justify-between text-sm">
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded border-[var(--border)] bg-[var(--card)]"
-                        />
+                        <input type="checkbox" className="w-4 h-4 rounded border-[var(--border)] bg-[var(--card)]" />
                         <span className="text-[var(--foreground-muted)]">Remember me</span>
                       </label>
-                      <a href="#" className="text-[#6366F1] hover:underline">
-                        Forgot password?
-                      </a>
+                      <a href="#" className="text-[#6366F1] hover:underline">Forgot password?</a>
                     </div>
 
-                    <Button
-                      onClick={handleDemoLogin}
-                      disabled={isLoading}
-                      className="w-full h-12 text-base font-semibold"
-                    >
+                    <Button onClick={handleDemoLogin} disabled={isLoading} className="w-full h-12 text-base font-semibold">
                       {isLoading ? (
                         <span className="flex items-center gap-2">
-                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 0h12a8 8 0 010 16z" />
-                          </svg>
+                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 0h12a8 8 0 010 16z" /></svg>
                           Signing in...
                         </span>
-                      ) : (
-                        'Sign In'
-                      )}
+                      ) : 'Sign In'}
                     </Button>
                   </CardContent>
                 </Card>
 
                 {/* Demo Credentials */}
                 <div className="mt-6 p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <p className="text-xs font-semibold text-[var(--foreground-muted)] uppercase tracking-wider mb-3">
-                    Demo Credentials
-                  </p>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <p className="text-xs font-semibold text-[var(--foreground-muted)] uppercase tracking-wider mb-3 text-center">Demo Credentials</p>
+                  <div className="grid grid-cols-3 gap-4 text-sm text-center">
                     <div>
                       <p className="text-[var(--foreground-muted)]">Advertiser</p>
                       <p className="text-[var(--foreground)] font-mono text-xs">sarah@tunaiku.com</p>
