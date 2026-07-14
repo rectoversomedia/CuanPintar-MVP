@@ -126,11 +126,12 @@ export default function HomePage() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[var(--border)]"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[var(--border)] shadow-sm"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-3">
+            {/* Logo */}
+            <Link href="/" className="flex items-center">
               <div className="relative w-36 h-10">
                 <Image
                   src="/logo.png"
@@ -142,22 +143,32 @@ export default function HomePage() {
               </div>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-8">
-              <Link href="/programs" className="text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--primary)] transition-colors">Marketplace</Link>
-              <Link href="/how-it-works" className="text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--primary)] transition-colors">How It Works</Link>
-              <Link href="/for-advertisers" className="text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--primary)] transition-colors">For Advertisers</Link>
-              <Link href="/for-partners" className="text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--primary)] transition-colors">For Partners</Link>
+            {/* Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-1">
+              <Link href="/programs" className="px-4 py-2 text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] rounded-lg transition-all">
+                Marketplace
+              </Link>
+              <Link href="/how-it-works" className="px-4 py-2 text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] rounded-lg transition-all">
+                How It Works
+              </Link>
+              <Link href="/for-advertisers" className="px-4 py-2 text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] rounded-lg transition-all">
+                For Advertisers
+              </Link>
+              <Link href="/for-partners" className="px-4 py-2 text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--background-secondary)] rounded-lg transition-all">
+                For Partners
+              </Link>
             </nav>
 
-            <div className="flex items-center gap-3">
+            {/* Auth Buttons */}
+            <div className="flex items-center gap-2">
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="text-[var(--foreground-muted)] hover:text-[var(--foreground)]">
                   Log In
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button size="sm" className="gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-90">
-                  Start Demo
+              <Link href="/register">
+                <Button size="sm" className="gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-90 shadow-md hover:shadow-lg transition-all">
+                  Sign Up Free
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -203,17 +214,17 @@ export default function HomePage() {
 
             {/* CTA Buttons */}
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/login">
-                <Button size="lg" className="gap-2 text-base px-8 h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-90">
+              <Link href="/register">
+                <Button size="lg" className="gap-2 text-base px-8 h-12 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] hover:opacity-90 shadow-lg hover:shadow-xl transition-all">
                   <Building2 className="w-5 h-5" />
-                  Launch Advertiser Demo
+                  Get Started as Advertiser
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button size="lg" variant="outline" className="gap-2 text-base px-8 h-12 border-2">
+              <Link href="/register">
+                <Button size="lg" variant="outline" className="gap-2 text-base px-8 h-12 border-2 hover:bg-[var(--primary-50)] transition-all">
                   <HandshakeIcon className="w-5 h-5" />
-                  Launch Partner Demo
+                  Join as Partner
                 </Button>
               </Link>
             </motion.div>
@@ -496,7 +507,7 @@ export default function HomePage() {
                 Join 50+ advertisers already growing with CuanPintar
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/login">
+                <Link href="/register">
                   <Button
                     size="lg"
                     className="bg-white text-[var(--primary)] hover:bg-white/90 gap-2 h-12 px-8 shadow-lg"
@@ -520,11 +531,13 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[var(--sidebar-bg)] text-white py-12 px-4">
+      <footer className="bg-[var(--sidebar-bg)] text-white pt-16 pb-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="relative w-36 h-10">
+          {/* Footer Main */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+            {/* Brand */}
+            <div className="md:col-span-2">
+              <div className="relative w-36 h-10 mb-4">
                 <Image
                   src="/logo.png"
                   alt="CuanPintar"
@@ -533,16 +546,57 @@ export default function HomePage() {
                   unoptimized
                 />
               </div>
+              <p className="text-white/60 text-sm max-w-sm mb-4">
+                Customer Acquisition Operating System for Indonesia. Build once, distribute everywhere.
+              </p>
+              <div className="flex gap-4">
+                <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                  <span className="text-sm">FB</span>
+                </a>
+                <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                  <span className="text-sm">TW</span>
+                </a>
+                <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                  <span className="text-sm">IG</span>
+                </a>
+                <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                  <span className="text-sm">IN</span>
+                </a>
+              </div>
             </div>
-            <div className="flex gap-6 text-sm text-white/60">
-              <Link href="/programs" className="hover:text-white transition-colors">Marketplace</Link>
-              <Link href="/how-it-works" className="hover:text-white transition-colors">How It Works</Link>
-              <Link href="/for-advertisers" className="hover:text-white transition-colors">For Advertisers</Link>
-              <Link href="/for-partners" className="hover:text-white transition-colors">For Partners</Link>
+
+            {/* Links */}
+            <div>
+              <h4 className="text-white font-semibold mb-4">Platform</h4>
+              <ul className="space-y-2">
+                <li><Link href="/programs" className="text-white/60 hover:text-white text-sm transition-colors">Marketplace</Link></li>
+                <li><Link href="/how-it-works" className="text-white/60 hover:text-white text-sm transition-colors">How It Works</Link></li>
+                <li><Link href="/for-advertisers" className="text-white/60 hover:text-white text-sm transition-colors">For Advertisers</Link></li>
+                <li><Link href="/for-partners" className="text-white/60 hover:text-white text-sm transition-colors">For Partners</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-white font-semibold mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">About Us</a></li>
+                <li><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">Blog</a></li>
+                <li><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">Careers</a></li>
+                <li><a href="#" className="text-white/60 hover:text-white text-sm transition-colors">Contact</a></li>
+              </ul>
             </div>
           </div>
-          <div className="border-t border-white/10 mt-8 pt-8 text-center text-sm text-white/40">
-            © 2024 CuanPintar. All rights reserved by Recto Vero Media.
+
+          {/* Footer Bottom */}
+          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-white/40">
+              © 2024 CuanPintar. All rights reserved by Recto Vero Media.
+            </p>
+            <div className="flex gap-6 text-sm text-white/40">
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+            </div>
           </div>
         </div>
       </footer>
