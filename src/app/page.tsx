@@ -131,16 +131,15 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-3">
-              <div className="relative w-10 h-10">
+              <div className="relative w-36 h-10">
                 <Image
                   src="/logo.png"
                   alt="CuanPintar"
                   fill
-                  className="object-contain"
+                  className="object-contain object-left"
                   unoptimized
                 />
               </div>
-              <span className="text-xl font-bold text-[var(--foreground)]">CuanPintar</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-8">
@@ -525,16 +524,15 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10">
+              <div className="relative w-36 h-10">
                 <Image
                   src="/logo.png"
                   alt="CuanPintar"
                   fill
-                  className="object-contain"
+                  className="object-contain object-left"
                   unoptimized
                 />
               </div>
-              <span className="text-xl font-bold">CuanPintar</span>
             </div>
             <div className="flex gap-6 text-sm text-white/60">
               <Link href="/programs" className="hover:text-white transition-colors">Marketplace</Link>

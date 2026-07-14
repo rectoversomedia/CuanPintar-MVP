@@ -189,13 +189,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="relative w-10 h-10 flex-shrink-0"
+              className={cn(
+                'relative flex-shrink-0 transition-all duration-200',
+                isCollapsed ? 'w-10 h-10' : 'w-36 h-10'
+              )}
             >
               <Image
                 src="/logo.png"
                 alt="CuanPintar"
                 fill
-                className="object-contain"
+                className="object-contain object-left"
                 unoptimized
               />
             </motion.div>
@@ -383,16 +386,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <footer className="bg-[var(--card)] border-t border-[var(--border)] px-6 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="relative w-8 h-8">
+              <div className="relative w-32 h-8">
                 <Image
                   src="/logo.png"
                   alt="CuanPintar"
                   fill
-                  className="object-contain"
+                  className="object-contain object-left"
                   unoptimized
                 />
               </div>
-              <span className="text-sm font-semibold text-[var(--foreground)]">CuanPintar</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-[var(--foreground-muted)]">
               <Link href="/programs" className="hover:text-[var(--primary)] transition-colors">Marketplace</Link>

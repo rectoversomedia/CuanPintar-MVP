@@ -141,17 +141,16 @@ export default function LoginPage() {
           <Link href="/" className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="relative w-12 h-12"
+              className="relative w-40 h-12"
             >
               <Image
                 src="/logo.png"
                 alt="CuanPintar"
                 fill
-                className="object-contain"
+                className="object-contain object-left"
                 unoptimized
               />
             </motion.div>
-            <span className="text-2xl font-bold text-white">CuanPintar</span>
           </Link>
 
           {/* Main Content */}
@@ -209,17 +208,16 @@ export default function LoginPage() {
       >
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="relative w-12 h-12">
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            <div className="relative w-36 h-10">
               <Image
                 src="/logo.png"
                 alt="CuanPintar"
                 fill
-                className="object-contain"
+                className="object-contain object-left"
                 unoptimized
               />
             </div>
-            <span className="text-2xl font-bold text-[var(--foreground)]">CuanPintar</span>
           </div>
 
           <AnimatePresence mode="wait">

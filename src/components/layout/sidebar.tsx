@@ -116,13 +116,16 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="relative w-10 h-10 flex-shrink-0"
+            className={cn(
+              'relative flex-shrink-0',
+              collapsed ? 'w-10 h-10' : 'w-36 h-10'
+            )}
           >
             <Image
               src="/logo.png"
               alt="CuanPintar"
               fill
-              className="object-contain"
+              className="object-contain object-left"
               unoptimized
             />
           </motion.div>
