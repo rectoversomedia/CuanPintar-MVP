@@ -9,7 +9,7 @@
 
 'use client';
 
-import { createContext, useContext, useReducer, useCallback, ReactNode, Dispatch } from 'react';
+import { createContext, useContext, useReducer, useCallback, useRef, ReactNode, Dispatch } from 'react';
 
 // ============================================
 // TYPES
@@ -295,12 +295,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const closeModal = useCallback(() => dispatch({ type: 'CLOSE_MODAL' }), []);
   const showToast = useCallback(
     (message: string, type: ToastState['type'] = 'info') => {
+      // Clear any existing toast timeout to prevent race conditions
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
       dispatch({ type: 'SHOW_TOAST', payload: { message, type } });
-      setTimeout(() => dispatch({ type: 'HIDE_TOAST' }), 5000);
+      toastTimeoutRef.current = setTimeout(() => dispatch({ type: 'HIDE_TOAST' }), 5000);
     },
     []
   );
   const hideToast = useCallback(() => dispatch({ type: 'HIDE_TOAST' }), []);
+
+  // Toast timeout ref to prevent race conditions
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // App Actions
   const setDemoMode = useCallback(

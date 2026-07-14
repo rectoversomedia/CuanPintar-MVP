@@ -50,6 +50,19 @@ const s2sConversionSchema = z.object({
   signature: z.string().optional(),
 });
 
+// Click tracking schema for validation
+const clickSchema = z.object({
+  partner_id: z.string().min(1, 'Partner ID is required'),
+  program_id: z.string().min(1, 'Program ID is required'),
+  fingerprint: z.string().optional(),
+  referrer: z.string().url().optional().or(z.string().max(2000)),
+  utm_source: z.string().max(255).optional(),
+  utm_medium: z.string().max(255).optional(),
+  utm_campaign: z.string().max(255).optional(),
+  utm_term: z.string().max(255).optional(),
+  utm_content: z.string().max(255).optional(),
+});
+
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
@@ -139,21 +152,36 @@ export async function POST(
 
     if (type === 'click') {
       const body = await request.json();
+
+      // Validate click data
+      const validationResult = clickSchema.safeParse(body);
+      if (!validationResult.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Validation failed',
+            details: validationResult.error.flatten(),
+          },
+          { status: 400 }
+        );
+      }
+
+      const validatedData = validationResult.data;
       const id = generateId();
 
       const click = {
         id,
-        partner_id: body.partner_id,
-        program_id: body.program_id,
-        fingerprint: body.fingerprint,
+        partner_id: validatedData.partner_id,
+        program_id: validatedData.program_id,
+        fingerprint: validatedData.fingerprint,
         ip,
         user_agent: userAgent,
-        referrer: body.referrer,
-        utm_source: body.utm_source,
-        utm_medium: body.utm_medium,
-        utm_campaign: body.utm_campaign,
-        utm_term: body.utm_term,
-        utm_content: body.utm_content,
+        referrer: validatedData.referrer,
+        utm_source: validatedData.utm_source,
+        utm_medium: validatedData.utm_medium,
+        utm_campaign: validatedData.utm_campaign,
+        utm_term: validatedData.utm_term,
+        utm_content: validatedData.utm_content,
         timestamp: new Date().toISOString(),
       };
 
@@ -164,15 +192,15 @@ export async function POST(
         try {
           await supabase.from('tracking_clicks').insert({
             id,
-            partner_id: body.partner_id,
-            program_id: body.program_id,
-            fingerprint: body.fingerprint,
+            partner_id: validatedData.partner_id,
+            program_id: validatedData.program_id,
+            fingerprint: validatedData.fingerprint,
             ip_address: ip,
             user_agent: userAgent,
-            referrer: body.referrer,
-            utm_source: body.utm_source,
-            utm_medium: body.utm_medium,
-            utm_campaign: body.utm_campaign,
+            referrer: validatedData.referrer,
+            utm_source: validatedData.utm_source,
+            utm_medium: validatedData.utm_medium,
+            utm_campaign: validatedData.utm_campaign,
           });
         } catch (err) {
           console.error('Failed to record click to Supabase:', err);

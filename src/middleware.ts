@@ -17,11 +17,20 @@ import { jwtVerify } from 'jose';
 // Environment configuration
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isDemoMode = isDevelopment && process.env.DEMO_MODE === 'true';
-const jwtSecret = new TextEncoder().encode(
-  process.env.JWT_SECRET ||
-  process.env.SUPABASE_JWT_SECRET ||
-  'development-secret-change-in-production'
-);
+
+// Validate JWT secret in production
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET or SUPABASE_JWT_SECRET must be configured in production');
+    }
+    // Development fallback - only if no secret configured
+    return new TextEncoder().encode('development-secret-change-in-production');
+  }
+  return new TextEncoder().encode(secret);
+};
+const jwtSecret = getJwtSecret();
 
 // Routes that don't require authentication
 const publicRoutes = [

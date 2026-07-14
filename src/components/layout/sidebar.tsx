@@ -113,7 +113,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         collapsed ? 'px-2' : 'px-4'
       )}>
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-36 h-36 relative">
+          <div className="w-10 h-10 relative">
             <Image
               src="/logo.png"
               alt="CuanPintar"
@@ -122,6 +122,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               unoptimized
             />
           </div>
+          {!collapsed && <span className="font-bold text-lg">CuanPintar</span>}
         </Link>
       </div>
 

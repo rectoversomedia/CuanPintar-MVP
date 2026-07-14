@@ -43,14 +43,11 @@ export default function AdminDashboard() {
   const loadStats = async () => {
     setLoading(true);
     try {
-      const email = localStorage.getItem('cp_session')
-        ? JSON.parse(localStorage.getItem('cp_session') || '{}').email
-        : '';
-
+      // Fetch stats - auth handled by middleware/cookies
       const [advRes, partRes, progRes] = await Promise.all([
-        fetch('/api/advertisers', { headers: { Authorization: `Bearer ${email}` } }),
-        fetch('/api/partners', { headers: { Authorization: `Bearer ${email}` } }),
-        fetch('/api/programs', { headers: { Authorization: `Bearer ${email}` } }),
+        fetch('/api/advertisers'),
+        fetch('/api/partners'),
+        fetch('/api/programs'),
       ]);
 
       const [advData, partData, progData] = await Promise.all([

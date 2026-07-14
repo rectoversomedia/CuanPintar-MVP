@@ -107,7 +107,7 @@ async function handleLogin(
   // Check DEMO_USERS first - match any seeded user
   const demoUser = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-  if (demoUser && (password === 'demo123' || password === 'demo' || password === '')) {
+  if (demoUser && (password === 'demo123' || password === 'demo')) {
     const response = NextResponse.json(
       { success: true, data: { user: demoUser } },
       { headers }

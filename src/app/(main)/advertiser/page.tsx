@@ -50,15 +50,9 @@ export default function AdvertiserDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Get user session
-      const sessionStr = localStorage.getItem('cp_session');
-      const email = sessionStr ? JSON.parse(sessionStr).email : '';
-
-      const res = await fetch('/api/programs', {
-        headers: {
-          'Authorization': `Bearer ${email}`,
-        },
-      });
+      // Fetch programs - auth is handled by middleware/cookies in demo mode
+      // or JWT token in production mode
+      const res = await fetch('/api/programs');
       const data = await res.json();
 
       if (data.success && data.data) {
