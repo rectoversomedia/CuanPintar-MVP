@@ -227,9 +227,9 @@ CREATE POLICY "Admins can manage all tickets"
     )
   );
 
--- ============================================
--- PERFORMANCE INDEXES
--- ============================================
+-- NOTE: This migration only contains indexes for tables already defined in 001_initial_schema.sql
+-- Tables fraud_scores, clicks, attribution_touchpoints indexes are now in migration 004_missing_tables.sql
+-- (Indexes were referencing non-existent tables - fixed by moving them to 004)
 
 -- Users indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -282,19 +282,8 @@ CREATE INDEX IF NOT EXISTS idx_conversions_partner_status ON conversions(partner
 CREATE INDEX IF NOT EXISTS idx_conversions_created_status ON conversions(created_at DESC, status);
 CREATE INDEX IF NOT EXISTS idx_conversions_fingerprint_created ON conversions(fingerprint, created_at DESC);
 
--- Clicks indexes (for click tracking performance)
-CREATE INDEX IF NOT EXISTS idx_clicks_partner_id ON clicks(partner_id);
-CREATE INDEX IF NOT EXISTS idx_clicks_program_id ON clicks(program_id);
-CREATE INDEX IF NOT EXISTS idx_clicks_fingerprint ON clicks(fingerprint);
-CREATE INDEX IF NOT EXISTS idx_clicks_ip_address ON clicks(ip_address);
-CREATE INDEX IF NOT EXISTS idx_clicks_created_at ON clicks(created_at DESC);
-
--- Attribution touchpoints indexes
-CREATE INDEX IF NOT EXISTS idx_attribution_visitor_id ON attribution_touchpoints(visitor_id);
-CREATE INDEX IF NOT EXISTS idx_attribution_click_id ON attribution_touchpoints(click_id);
-CREATE INDEX IF NOT EXISTS idx_attribution_partner_id ON attribution_touchpoints(partner_id);
-CREATE INDEX IF NOT EXISTS idx_attribution_program_id ON attribution_touchpoints(program_id);
-CREATE INDEX IF NOT EXISTS idx_attribution_created_at ON attribution_touchpoints(created_at DESC);
+-- NOTE: Removed indexes for clicks, attribution_touchpoints, fraud_scores
+-- These are now in migration 004_missing_tables.sql with their CREATE TABLE statements
 
 -- Payouts indexes
 CREATE INDEX IF NOT EXISTS idx_payouts_partner_id ON payouts(partner_id);
@@ -305,27 +294,16 @@ CREATE INDEX IF NOT EXISTS idx_payouts_created_at ON payouts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_fraud_blocklist_type_value ON fraud_blocklist(type, value) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_fraud_blocklist_created_at ON fraud_blocklist(created_at DESC);
 
--- Fraud scores indexes
-CREATE INDEX IF NOT EXISTS idx_fraud_scores_conversion_id ON fraud_scores(conversion_id);
-CREATE INDEX IF NOT EXISTS idx_fraud_scores_created_at ON fraud_scores(created_at DESC);
+-- NOTE: Removed indexes for fraud_scores, support_tickets, audit_logs
+-- These are now in migration 004_missing_tables.sql with their CREATE TABLE statements
 
 -- Notifications indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, read) WHERE read = false;
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
 
--- Support tickets indexes
-CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id ON support_tickets(user_id);
-CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
-CREATE INDEX IF NOT EXISTS idx_support_tickets_priority ON support_tickets(priority);
-CREATE INDEX IF NOT EXISTS idx_support_tickets_assigned_to ON support_tickets(assigned_to);
-CREATE INDEX IF NOT EXISTS idx_support_tickets_created_at ON support_tickets(created_at DESC);
-
--- Audit logs indexes
-CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_id ON audit_logs(actor_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+-- NOTE: Removed indexes for support_tickets and audit_logs
+-- These are now in migration 004_missing_tables.sql with their CREATE TABLE statements
 
 -- ============================================
 -- UPDATED TIMESTAMP TRIGGER
