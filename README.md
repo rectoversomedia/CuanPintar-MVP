@@ -1,6 +1,6 @@
 # CuanPintar - Customer Acquisition OS for Indonesia
 
-![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?style=flat-square&logo=tailwind-css)
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
@@ -17,7 +17,7 @@ CuanPintar is a Customer Acquisition Operating System that connects advertisers 
 | **Multi-Channel Distribution** | Distribute to creators, affiliates, sales teams, communities |
 | **Partner Marketplace** | Partners discover programs matching their audience |
 | **Real-Time Tracking** | Conversion tracking with detailed analytics |
-| **Fraud Detection** | AI-powered fraud protection with quality scoring |
+| **Fraud Detection** | Rule-based fraud detection with 20+ signals and quality scoring |
 | **Automated Payouts** | Multiple payment methods (Bank Transfer, eWallets) |
 
 ## 🚀 Quick Start
@@ -62,7 +62,7 @@ Navigate to `/login` and select a demo role:
 
 ## 🏗️ Architecture
 
-### Frontend (Next.js 16)
+### Frontend (Next.js 15)
 ```
 src/
 ├── app/                      # App Router pages
@@ -137,7 +137,7 @@ src/
 
 | Category | Technology |
 |----------|------------|
-| **Frontend** | Next.js 16, React 19, TypeScript 5 |
+| **Frontend** | Next.js 15, React 19, TypeScript 5 |
 | **Styling** | Tailwind CSS 4 |
 | **UI Components** | Radix UI primitives |
 | **Icons** | Lucide React |
@@ -254,7 +254,7 @@ The app includes demo data for:
 
 - [ ] Multi-tenant architecture
 - [ ] Mobile app (React Native)
-- [ ] Advanced fraud detection (ML)
+- [ ] Advanced fraud detection with ML (future)
 - [ ] A/B testing for programs
 - [ ] API keys for partners
 - [ ] White-label solutions

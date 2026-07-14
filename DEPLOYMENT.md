@@ -228,7 +228,7 @@ npm run build
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        FRONTEND                              │
-│  Next.js 16 + React 19 + TypeScript + Tailwind CSS 4       │
+│  Next.js 15 + React 19 + TypeScript + Tailwind CSS 4       │
 │  - Radix UI primitives                                       │
 │  - Framer Motion animations                                  │
 │  - Recharts for charts                                      │

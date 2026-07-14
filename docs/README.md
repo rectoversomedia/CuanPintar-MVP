@@ -2,7 +2,7 @@
 
 ## Overview
 
-CuanPintar is a Customer Acquisition Operating System (CAOS) for the Indonesian market, built with Next.js 16, Supabase, and TypeScript.
+CuanPintar is a Customer Acquisition Operating System (CAOS) for the Indonesian market, built with Next.js 15, Supabase, and TypeScript.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ CuanPintar is a Customer Acquisition Operating System (CAOS) for the Indonesian 
 
 | Layer | Technology |
 |------|------------|
-| Framework | Next.js 16.2.10 (App Router) |
+| Framework | Next.js 15.1.0 (App Router) |
 | Language | TypeScript 5 |
 | UI | React 19, Radix UI, Tailwind CSS 4 |
 | Database | Supabase (PostgreSQL) |
@@ -90,7 +90,7 @@ Multiple detection layers:
 - Velocity detection (clicks/hour)
 - Email domain validation
 - Geo-location anomaly detection
-- Behavioral pattern analysis (ML)
+- Behavioral pattern analysis (rule-based heuristics)
 
 ### 4. Attribution Models
 
@@ -178,7 +178,7 @@ All protected endpoints require authentication via:
 - ✅ Input validation (Zod)
 - ✅ Fraud detection (20+ signals)
 - ✅ Geo-location anomaly detection
-- ✅ ML-based behavioral analysis
+- ✅ ML-based behavioral analysis (rule-based heuristics)
 - ✅ Webhook signature verification
 
 ### Required Environment Variables
