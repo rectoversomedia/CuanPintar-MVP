@@ -59,7 +59,6 @@ export async function createRefreshToken(
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(REFRESH_TOKEN_EXPIRY)
-    .setProtectedHeader({ alg: 'HS256' })
     .sign(secret);
   return token;
 }
