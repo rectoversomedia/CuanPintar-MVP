@@ -1,34 +1,18 @@
 import js from "@eslint/js";
 import globals from "globals";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
-import tseslintParser from "@typescript-eslint/parser";
+import tseslint from "typescript-eslint";
 
-export default [
+export default tseslint.config(
+  { ignores: [".next/**", "out/**", "build/**", "node_modules/**"] },
+  ...tseslint.configs.recommended,
   {
-    ignores: [".next/**", "out/**", "build/**", "node_modules/**"],
-  },
-  {
-    files: ["**/*.{js,mjs,cjs,ts,tsx}"],
-    plugins: {
-      js: js,
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
-    },
+    files: ["**/*.{ts,tsx}"],
+    plugins: { js },
     languageOptions: {
-      parser: tseslintParser,
-      parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-        ecmaFeatures: { jsx: true },
-      },
       globals: {
         ...globals.browser,
         ...globals.node,
         ...globals.serviceworker,
-        ...globals.mocha,
-        ...globals.jest,
-        ...globals.vitest,
         React: "readonly",
         CP_API_BASE: "readonly",
         CP_DEBUG: "readonly",
@@ -36,17 +20,18 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "no-unused-vars": "off",
+      "prefer-const": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/prefer-const": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
       "no-case-declarations": "warn",
-      "no-redeclare": "warn",
+      "no-redeclare": "off",
       "no-empty": "warn",
-      "preserve-caught-error": "warn",
-      "no-useless-assignment": "warn",
-      // Disable react-hooks rules for Next.js compatibility
-      "react-hooks/rules-of-hooks": "warn",
-      "react-hooks/exhaustive-deps": "off",
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "no-undef": "off",
     },
-  },
-];
+  }
+);

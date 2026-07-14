@@ -45,8 +45,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.6",
-    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.4.2",
@@ -56,17 +54,17 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.64.0",
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.10",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.7.0",
-    "js": "^0.1.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
     "jsdom": "^24.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "typescript-eslint": "^8.64.0",
     "vitest": "^1.4.0"
   },
   "overrides": {
