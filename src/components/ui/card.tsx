@@ -4,22 +4,26 @@ import { cn } from '@/lib/utils';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hover?: boolean;
+  glow?: boolean;
 }
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, hover = false, ...props }, ref) => {
+  ({ className, hover = false, glow = false, ...props }, ref) => {
+    const baseClassName = cn(
+      'rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm',
+      glow ? 'hover:shadow-lg hover:shadow-[var(--primary)]/10 hover:border-[var(--primary-200)]' : 'hover:shadow-md hover:border-[var(--primary-200)]',
+      className
+    );
+
     if (hover) {
       return (
         <motion.div
           ref={ref}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          whileHover={{ y: -2 }}
-          className={cn(
-            'rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition-all duration-200 cursor-pointer hover:shadow-md hover:border-[var(--primary-200)]',
-            className
-          )}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          whileHover={{ y: -4, scale: 1.01 }}
+          className={baseClassName}
         >
           {props.children}
         </motion.div>
@@ -27,14 +31,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     }
 
     return (
-      <div
-        ref={ref}
-        className={cn(
-          'rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm',
-          className
-        )}
-        {...props}
-      />
+      <div ref={ref} className={baseClassName} {...props} />
     );
   }
 );
@@ -56,7 +53,7 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HT
     <h3
       ref={ref}
       className={cn(
-        'text-lg font-semibold leading-none tracking-tight text-[var(--foreground)] font-[family-name:var(--font-heading)]',
+        'text-lg font-semibold leading-none tracking-tight text-[var(--foreground)] font-[family-name:var(--font-heading)] text-center',
         className
       )}
       {...props}
@@ -69,7 +66,7 @@ const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn('text-sm text-[var(--foreground-muted)]', className)}
+      className={cn('text-sm text-[var(--foreground-muted)] text-center', className)}
       {...props}
     />
   )

@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChartLine,
   Megaphone,
@@ -101,19 +102,22 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   };
 
   return (
-    <aside
-      className={cn(
-        'fixed left-0 top-0 z-40 h-screen bg-[#0a1628] text-white flex flex-col transition-all duration-300',
-        collapsed ? 'w-[68px]' : 'w-[220px]'
-      )}
+    <motion.aside
+      animate={{ width: collapsed ? 72 : 260 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className="fixed left-0 top-0 z-40 h-screen bg-[var(--sidebar-bg)] flex flex-col"
     >
       {/* Logo */}
-      <div className={cn(
-        'h-14 flex items-center justify-center border-b border-white/10',
-        collapsed ? 'px-2' : 'px-4'
-      )}>
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 relative">
+      <div className="h-16 flex items-center border-b border-white/10 overflow-hidden">
+        <Link href="/" className={cn(
+          'flex items-center gap-3 px-4',
+          collapsed && 'justify-center w-full'
+        )}>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative w-10 h-10 flex-shrink-0"
+          >
             <Image
               src="/logo.png"
               alt="CuanPintar"
@@ -121,52 +125,94 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               className="object-contain"
               unoptimized
             />
-          </div>
-          {!collapsed && <span className="font-bold text-lg">CuanPintar</span>}
+          </motion.div>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="font-bold text-lg text-white whitespace-nowrap"
+              >
+                CuanPintar
+              </motion.span>
+            )}
+          </AnimatePresence>
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-3 overflow-y-auto">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
-              isActive(item.href)
-                ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-md'
-                : 'text-gray-400 hover:bg-white/10 hover:text-white',
-              collapsed && 'justify-center px-2'
-            )}
-          >
-            {item.icon}
-            {!collapsed && <span>{item.label}</span>}
-          </Link>
-        ))}
+      <nav className="flex-1 py-4 px-3 overflow-y-auto overflow-x-hidden">
+        <div className="space-y-1">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                isActive(item.href)
+                  ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white shadow-lg shadow-[var(--primary)]/20'
+                  : 'text-[var(--sidebar-text-muted)] hover:bg-[var(--sidebar-hover)] hover:text-white',
+                collapsed && 'justify-center px-2'
+              )}
+            >
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="flex-shrink-0"
+              >
+                {item.icon}
+              </motion.div>
+              <AnimatePresence>
+                {!collapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="whitespace-nowrap"
+                  >
+                    {item.label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+          ))}
+        </div>
       </nav>
 
       {/* Collapse Toggle */}
-      <div className="border-t border-white/10 p-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggle}
-          className={cn(
-            'w-full text-gray-400 hover:text-white hover:bg-white/10',
-            collapsed && 'px-2'
-          )}
+      <div className="border-t border-white/10 p-3">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          {collapsed ? (
-            <CaretRight size={18} weight="bold" />
-          ) : (
-            <>
-              <CaretLeft size={18} weight="bold" className="mr-2" />
-              <span className="text-xs">Collapse</span>
-            </>
-          )}
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggle}
+            className={cn(
+              'w-full text-[var(--sidebar-text-muted)] hover:text-white hover:bg-[var(--sidebar-hover)] transition-colors',
+              collapsed && 'px-2'
+            )}
+          >
+            <motion.div
+              animate={{ rotate: collapsed ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {collapsed ? (
+                <CaretRight size={18} weight="bold" />
+              ) : (
+                <>
+                  <CaretLeft size={18} weight="bold" className="mr-2" />
+                  <span className="text-xs">Collapse</span>
+                </>
+              )}
+            </motion.div>
+          </Button>
+        </motion.div>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

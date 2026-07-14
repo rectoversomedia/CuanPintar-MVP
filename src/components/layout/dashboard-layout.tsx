@@ -3,17 +3,15 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   Target,
   Users,
-  Share2,
   ShoppingCart,
   BarChart3,
   Receipt,
-  Settings,
-  Store,
   Package,
   Download,
   Wallet,
@@ -24,7 +22,6 @@ import {
   ShieldCheck,
   MessageSquare,
   UserCheck,
-  Clock,
   Megaphone,
   Bell,
   LogOut,
@@ -32,10 +29,13 @@ import {
   Menu,
   X,
   Plus,
+  Search,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
 // Navigation Configurations
@@ -169,41 +169,55 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar - Dark */}
+      {/* Sidebar */}
       <motion.aside
-        initial={{ x: -280 }}
         animate={{ x: 0 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
           'fixed top-0 left-0 z-50 h-screen flex flex-col',
           'bg-[var(--sidebar-bg)]',
-          'transition-all duration-300 ease-in-out',
+          'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
           isCollapsed ? 'w-[72px]' : 'w-[260px]',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">C</span>
-            </div>
-            {!isCollapsed && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-lg font-bold text-white"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                CuanPintar
-              </motion.span>
-            )}
+        <div className="h-16 flex items-center border-b border-white/10 overflow-hidden">
+          <Link href="/" className={cn(
+            'flex items-center gap-3 px-4',
+            isCollapsed && 'justify-center w-full'
+          )}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative w-10 h-10 flex-shrink-0"
+            >
+              <Image
+                src="/logo.png"
+                alt="CuanPintar"
+                fill
+                className="object-contain"
+                unoptimized
+              />
+            </motion.div>
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="font-bold text-lg text-white whitespace-nowrap"
+                >
+                  CuanPintar
+                </motion.span>
+              )}
+            </AnimatePresence>
           </Link>
 
           {/* Mobile Close */}
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
+            className="lg:hidden p-2 mr-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
@@ -211,48 +225,56 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
-          {navItems.map((item, index) => (
-            <motion.div
-              key={item.href}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.03 }}
-            >
-              <Link
-                href={item.href}
-                onClick={() => setIsMobileOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl',
-                  'text-sm font-medium transition-all duration-200',
-                  'relative overflow-hidden',
-                  isActive(item.href)
-                    ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg shadow-[#6366F1]/20'
-                    : 'text-[var(--sidebar-text-muted)] hover:text-white hover:bg-white/5'
-                )}
+          <div className="space-y-1">
+            {navItems.map((item, index) => (
+              <motion.div
+                key={item.href}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.03 }}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <>
-                    <span className="flex-1">{item.label}</span>
-                    {item.badge && (
-                      <Badge variant="destructive" size="sm" className="h-5 min-w-[20px] px-1.5">
-                        {item.badge}
-                      </Badge>
+                <Link
+                  href={item.href}
+                  onClick={() => setIsMobileOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                    'text-sm font-medium transition-all duration-200',
+                    isActive(item.href)
+                      ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white shadow-lg shadow-[var(--primary)]/20'
+                      : 'text-[var(--sidebar-text-muted)] hover:text-white hover:bg-[var(--sidebar-hover)]'
+                  )}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <AnimatePresence mode="wait">
+                    {!isCollapsed && (
+                      <motion.span
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex-1"
+                      >
+                        {item.label}
+                      </motion.span>
                     )}
-                  </>
-                )}
-              </Link>
-            </motion.div>
-          ))}
+                  </AnimatePresence>
+                  {item.badge && !isCollapsed && (
+                    <Badge variant="destructive" size="sm" className="h-5 min-w-[20px] px-1.5 text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         </nav>
 
-        {/* Settings & Logout */}
-        <div className="p-3 border-t border-white/10">
+        {/* User Info & Actions */}
+        <div className="p-3 border-t border-white/10 space-y-1">
           {!isCollapsed && user && (
-            <div className="px-3 py-2 mb-2">
+            <div className="px-3 py-2 mb-2 rounded-lg bg-white/5">
               <div className="flex items-center gap-3">
                 <Avatar size="sm" className="ring-2 ring-white/20">
-                  <AvatarFallback className="bg-[#6366F1] text-white text-xs">
+                  <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white text-xs">
                     {user.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -265,30 +287,35 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           )}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--sidebar-text-muted)] hover:text-white hover:bg-white/5 transition-all"
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--sidebar-text-muted)] hover:text-white hover:bg-[var(--sidebar-hover)] transition-all"
           >
             <LogOut className="w-5 h-5" />
             {!isCollapsed && <span>Logout</span>}
           </button>
         </div>
 
-        {/* Collapse Toggle */}
+        {/* Collapse Toggle Button */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-[var(--sidebar-bg)] border border-white/20 items-center justify-center text-white/60 hover:text-white"
+          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-[var(--sidebar-bg)] border border-white/20 items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition-all"
         >
-          <ChevronLeft className={cn('w-4 h-4 transition-transform', isCollapsed && 'rotate-180')} />
+          <motion.div
+            animate={{ rotate: isCollapsed ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </motion.div>
         </button>
       </motion.aside>
 
       {/* Main Content Area */}
-      <div className={cn(
-        'min-h-screen flex flex-col',
-        'transition-all duration-300',
-        isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
-      )}>
+      <motion.div
+        animate={{ marginLeft: isCollapsed ? 72 : 260 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+        className="min-h-screen flex flex-col"
+      >
         {/* Header */}
-        <header className="h-16 bg-[var(--card)] border-b border-[var(--border)] px-6 flex items-center justify-between sticky top-0 z-40">
+        <header className="h-16 bg-[var(--card)]/80 backdrop-blur-xl border-b border-[var(--border)] px-6 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-4">
             {/* Mobile Menu Toggle */}
             <button
@@ -297,14 +324,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             >
               <Menu className="w-5 h-5 text-[var(--foreground)]" />
             </button>
+
+            {/* Page Title */}
             <div>
               <h1 className="text-lg font-semibold text-[var(--foreground)]">{getPageTitle()}</h1>
+              <p className="text-xs text-[var(--foreground-muted)] hidden sm:block">Welcome back</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <div className="hidden md:flex items-center">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-muted)]" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="h-9 w-64 pl-9 pr-4 rounded-lg border border-[var(--border)] bg-[var(--background)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)]"
+                />
+              </div>
+            </div>
+
             {/* Quick Action Button */}
-            <Button size="sm" className="gap-2">
+            <Button size="sm" className="gap-2 hidden sm:flex">
               <Plus className="w-4 h-4" />
               Create New
             </Button>
@@ -313,45 +355,57 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <button className="relative p-2 rounded-lg hover:bg-[var(--background-secondary)]">
               <Bell className="w-5 h-5 text-[var(--foreground-muted)]" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-[#EF4444] rounded-full" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--danger)] rounded-full" />
               )}
             </button>
 
             {/* User Avatar */}
-            <Avatar size="sm" className="cursor-pointer">
-              <AvatarFallback className="bg-[#6366F1] text-white text-xs">
+            <Avatar size="sm" className="cursor-pointer ring-2 ring-transparent hover:ring-[var(--primary)]/20">
+              <AvatarFallback className="bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white text-xs">
                 {user?.name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
               </AvatarFallback>
             </Avatar>
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Page Content - Full Width */}
         <main className="flex-1 p-6">
-          {children}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {children}
+          </motion.div>
         </main>
 
         {/* Footer */}
         <footer className="bg-[var(--card)] border-t border-[var(--border)] px-6 py-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
-                <span className="text-white font-bold text-sm">C</span>
+              <div className="relative w-8 h-8">
+                <Image
+                  src="/logo.png"
+                  alt="CuanPintar"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
               <span className="text-sm font-semibold text-[var(--foreground)]">CuanPintar</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-[var(--foreground-muted)]">
-              <Link href="/programs" className="hover:text-[var(--primary)]">Marketplace</Link>
-              <Link href="/how-it-works" className="hover:text-[var(--primary)]">How It Works</Link>
-              <Link href="/for-advertisers" className="hover:text-[var(--primary)]">For Advertisers</Link>
-              <Link href="/for-partners" className="hover:text-[var(--primary)]">For Partners</Link>
+              <Link href="/programs" className="hover:text-[var(--primary)] transition-colors">Marketplace</Link>
+              <Link href="/how-it-works" className="hover:text-[var(--primary)] transition-colors">How It Works</Link>
+              <Link href="/for-advertisers" className="hover:text-[var(--primary)] transition-colors">For Advertisers</Link>
+              <Link href="/for-partners" className="hover:text-[var(--primary)] transition-colors">For Partners</Link>
             </div>
             <p className="text-sm text-[var(--foreground-subtle)]">
               © 2024 CuanPintar. All rights reserved.
             </p>
           </div>
         </footer>
-      </div>
+      </motion.div>
     </div>
   );
 }

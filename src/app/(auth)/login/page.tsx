@@ -3,17 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2,
   Users,
   ShieldCheck,
   ArrowLeft,
-  ArrowRight,
   Check,
-  Zap,
   Loader2,
-  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,7 +19,6 @@ import { Input } from '@/components/ui/input';
 
 type Role = 'advertiser' | 'partner' | 'admin';
 
-// Demo users matching the database seed
 const DEMO_USERS = [
   { id: '00000000-0000-0000-0000-000000000011', email: 'sarah@tunaiku.com', name: 'Sarah Wijaya', role: 'advertiser' as Role, companyName: 'Tunaiku' },
   { id: '00000000-0000-0000-0000-000000000021', email: 'media@kompas.com', name: 'Media Partner Jakarta', role: 'partner' as Role, companyName: 'Kompas Media' },
@@ -29,12 +26,12 @@ const DEMO_USERS = [
 ];
 
 const roles = [
-  { id: 'advertiser' as Role, title: 'Advertiser', description: 'Launch campaigns and manage partners', icon: Building2, gradient: 'from-[#6366F1] to-[#4F46E5]' },
-  { id: 'partner' as Role, title: 'Partner', description: 'Discover programs and earn commissions', icon: Users, gradient: 'from-[#8B5CF6] to-[#7C3AED]' },
-  { id: 'admin' as Role, title: 'Admin', description: 'Manage platform operations', icon: ShieldCheck, gradient: 'from-[#F43F5E] to-[#E11D48]' },
+  { id: 'advertiser' as Role, title: 'Advertiser', description: 'Launch campaigns and manage partners', icon: Building2, gradient: 'from-indigo-500 to-indigo-600' },
+  { id: 'partner' as Role, title: 'Partner', description: 'Discover programs and earn commissions', icon: Users, gradient: 'from-purple-500 to-purple-600' },
+  { id: 'admin' as Role, title: 'Admin', description: 'Manage platform operations', icon: ShieldCheck, gradient: 'from-rose-500 to-rose-600' },
 ];
 
-const features = [
+const benefits = [
   '100+ verified media partners',
   'Multi-channel distribution',
   'Real-time tracking & fraud detection',
@@ -53,7 +50,6 @@ export default function LoginPage() {
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
     setStep('credentials');
-    // Pre-fill demo credentials
     const demoUser = DEMO_USERS.find(u => u.role === role);
     if (demoUser) {
       setEmail(demoUser.email);
@@ -71,42 +67,23 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // Try real API login first
       const response = await fetch('/api/auth', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'login',
-          email,
-          password,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', email, password }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Store user data
         const userData = data.data?.user || { email, role: selectedRole };
         localStorage.setItem('cp_user', JSON.stringify(userData));
-        localStorage.setItem('cp_session', JSON.stringify({ authenticated: true, timestamp: Date.now() }));
-
-        // Set cookies for middleware
-        const expires = new Date();
-        expires.setDate(expires.getDate() + 7);
-        document.cookie = `cp_access_token=${encodeURIComponent(email)}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
-        document.cookie = `cp_user_role=${selectedRole}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
-
+        localStorage.setItem('cp_session', JSON.stringify({ authenticated: true }));
         router.push(`/${selectedRole}`);
       } else {
-        // If API fails, try demo mode
-        console.log('API login failed, trying demo mode:', data.error);
         handleDemoLogin();
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      // Fallback to demo mode on network error
+    } catch {
       handleDemoLogin();
     }
   };
@@ -118,120 +95,171 @@ export default function LoginPage() {
 
     try {
       const user = DEMO_USERS.find((u) => u.role === selectedRole);
-      localStorage.setItem('cp_user', JSON.stringify(user));
-      localStorage.setItem('cp_session', JSON.stringify({ demo: true, role: selectedRole, userId: user?.id }));
-
-      // Set cookie for middleware auth check
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 7);
-      document.cookie = `cp_access_token=${encodeURIComponent(user?.email || '')}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
-      document.cookie = `cp_user_role=${selectedRole}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-      router.push(`/${selectedRole}`);
-    } catch (err) {
-      setError('Login failed. Please try again.');
+      if (user) {
+        localStorage.setItem('cp_user', JSON.stringify(user));
+        localStorage.setItem('cp_session', JSON.stringify({ authenticated: true, isDemo: true }));
+        router.push(`/${selectedRole}`);
+      } else {
+        setError('Demo user not found');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleBack = () => {
+    setStep('role');
+    setSelectedRole(null);
+    setEmail('');
+    setPassword('');
+    setError(null);
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--background)] flex">
-      {/* Left Panel - Branding - Dark */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#0F172A] p-12 flex-col justify-between relative overflow-hidden">
-        {/* Background Gradient Orbs */}
-        <div className="absolute top-0 left-0 w-96 h-96 bg-[#6366F1]/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#8B5CF6]/10 rounded-full blur-3xl" />
-
-        <div className="relative z-10">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 mb-16">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-lg shadow-[#6366F1]/20">
-              <span className="text-white font-bold text-xl">C</span>
-            </div>
-            <span className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>CuanPintar</span>
-          </Link>
-
-          {/* Hero Text */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-              Customer Acquisition OS<br />
-              <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#F43F5E] bg-clip-text text-transparent">
-                for Indonesia.
-              </span>
-            </h1>
-            <p className="text-lg text-white/60 mb-8 max-w-md">
-              Create once. Distribute everywhere. Manage your entire partner ecosystem from one platform.
-            </p>
-
-            {/* Features */}
-            <ul className="space-y-3">
-              {features.map((feature, i) => (
-                <motion.li
-                  key={feature}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + i * 0.1 }}
-                  className="flex items-center gap-3 text-white/80"
-                >
-                  <div className="w-6 h-6 rounded-full bg-[#10B981]/20 flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5 text-[#10B981]" />
-                  </div>
-                  {feature}
-                </motion.li>
-              ))}
-            </ul>
-          </motion.div>
+    <div className="min-h-screen flex bg-[var(--background)]">
+      {/* Left Panel - Branding */}
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+        className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[var(--sidebar-bg)] via-[#0F172A] to-[#1E293B] p-12 relative overflow-hidden"
+      >
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-0 w-full h-full" style={{
+            backgroundImage: `radial-gradient(circle at 25px 25px, white 1px, transparent 0)`,
+            backgroundSize: '50px 50px'
+          }} />
         </div>
 
-        {/* Testimonial */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="relative z-10 border-t border-white/10 pt-6">
-          <blockquote className="text-white/60 italic">
-            &ldquo;CuanPintar transformed how we manage acquisition across multiple channels. One program, everywhere.&rdquo;
-          </blockquote>
-          <p className="text-white mt-3 font-medium">Sarah Wijaya</p>
-          <p className="text-white/40 text-sm">Marketing Director, Tunaiku</p>
-        </motion.div>
-      </div>
+        {/* Gradient Orbs */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[var(--primary)]/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[var(--secondary)]/20 rounded-full blur-3xl" />
 
-      {/* Right Panel - Login Form - Light */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-[var(--background)]">
+        <div className="relative z-10 flex flex-col justify-between w-full">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="relative w-12 h-12"
+            >
+              <Image
+                src="/logo.png"
+                alt="CuanPintar"
+                fill
+                className="object-contain"
+                unoptimized
+              />
+            </motion.div>
+            <span className="text-2xl font-bold text-white">CuanPintar</span>
+          </Link>
+
+          {/* Main Content */}
+          <div className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
+                Customer Acquisition OS
+                <br />
+                <span className="bg-gradient-to-r from-[var(--primary)] via-[var(--secondary)] to-[var(--accent)] bg-clip-text text-transparent">
+                  for Indonesia.
+                </span>
+              </h1>
+            </motion.div>
+
+            <motion.ul
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-4"
+            >
+              {benefits.map((benefit, index) => (
+                <motion.li
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
+                  className="flex items-center gap-3 text-white/80"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[var(--success)]/20 flex items-center justify-center">
+                    <Check className="w-4 h-4 text-[var(--success)]" />
+                  </div>
+                  <span>{benefit}</span>
+                </motion.li>
+              ))}
+            </motion.ul>
+          </div>
+
+          {/* Footer */}
+          <div className="text-white/40 text-sm">
+            © 2024 CuanPintar. All rights reserved.
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Right Panel - Login Form */}
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex-1 flex items-center justify-center p-6"
+      >
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden mb-8 flex items-center justify-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center">
-              <span className="text-white font-bold text-lg">C</span>
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
+            <div className="relative w-12 h-12">
+              <Image
+                src="/logo.png"
+                alt="CuanPintar"
+                fill
+                className="object-contain"
+                unoptimized
+              />
             </div>
-            <span className="text-xl font-bold text-[var(--foreground)]" style={{ fontFamily: 'var(--font-heading)' }}>CuanPintar</span>
+            <span className="text-2xl font-bold text-[var(--foreground)]">CuanPintar</span>
           </div>
 
           <AnimatePresence mode="wait">
             {step === 'role' ? (
-              <motion.div key="role-selection" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+              <motion.div
+                key="role"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-8"
+              >
                 {/* Header */}
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">Welcome Back</h2>
-                  <p className="text-[var(--foreground-muted)]">Select your role to continue</p>
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-[var(--foreground)]">Welcome Back</h2>
+                  <p className="text-[var(--foreground-muted)] mt-2">Select your role to continue</p>
                 </div>
 
                 {/* Role Cards */}
                 <div className="space-y-4">
-                  {roles.map((role, i) => (
-                    <motion.div key={role.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+                  {roles.map((role, index) => (
+                    <motion.div
+                      key={role.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
                       <button
                         onClick={() => handleRoleSelect(role.id)}
-                        className="w-full p-5 rounded-xl border border-[var(--border)] bg-[var(--card)] hover:border-[#6366F1] hover:shadow-lg hover:shadow-[#6366F1]/10 transition-all duration-300 text-left group"
+                        className="w-full p-5 rounded-2xl border border-[var(--border)] bg-[var(--card)] hover:border-[var(--primary)]/50 hover:shadow-lg transition-all duration-300 group text-left"
                       >
                         <div className="flex items-center gap-4">
-                          <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${role.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform`}>
-                            <role.icon size={28} />
+                          <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${role.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`}>
+                            <role.icon className="w-7 h-7 text-white" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-[var(--foreground)]">{role.title}</h3>
+                            <h3 className="text-lg font-semibold text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors">
+                              {role.title}
+                            </h3>
                             <p className="text-sm text-[var(--foreground-muted)]">{role.description}</p>
                           </div>
-                          <ArrowRight className="w-5 h-5 text-[var(--foreground-muted)] group-hover:text-[#6366F1] group-hover:translate-x-1 transition-all" />
                         </div>
                       </button>
                     </motion.div>
@@ -239,130 +267,119 @@ export default function LoginPage() {
                 </div>
 
                 {/* Demo Notice */}
-                <div className="mt-6 p-4 rounded-xl bg-[#6366F1]/5 border border-[#6366F1]/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-[#6366F1]" />
-                    <p className="text-sm font-medium text-[#6366F1]">Demo Mode Available</p>
-                  </div>
-                  <p className="text-sm text-[var(--foreground-muted)]">
-                    Use demo credentials below or configure Supabase for real authentication.
-                  </p>
-                </div>
-
-                {/* Demo Credentials */}
-                <div className="mt-4 p-4 rounded-xl bg-[var(--background-secondary)] border border-[var(--border)]">
-                  <p className="text-xs font-semibold text-[var(--foreground-muted)] uppercase tracking-wider mb-3 text-center">Demo Credentials (password: demo123)</p>
-                  <div className="grid grid-cols-3 gap-4 text-sm text-center">
-                    <div>
-                      <p className="text-[var(--foreground-muted)]">Advertiser</p>
-                      <p className="text-[var(--foreground)] font-mono text-xs">sarah@tunaiku.com</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--foreground-muted)]">Partner</p>
-                      <p className="text-[var(--foreground)] font-mono text-xs">media@kompas.com</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--foreground-muted)]">Admin</p>
-                      <p className="text-[var(--foreground)] font-mono text-xs">admin@cuanpintar.com</p>
-                    </div>
-                  </div>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="p-4 rounded-xl bg-[var(--primary-50)] border border-[var(--primary-100)]"
+                >
+                  <p className="text-sm font-medium text-[var(--primary-700)] mb-1">Demo Mode Available</p>
+                  <p className="text-xs text-[var(--primary-600)]">Select a role and click "Continue as Demo" to explore</p>
+                </motion.div>
               </motion.div>
             ) : (
-              <motion.div key="credentials" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <motion.div
+                key="credentials"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
                 {/* Back Button */}
-                <button onClick={() => setStep('role')} className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] mb-6 transition-colors">
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to role selection
+                  <span className="text-sm">Back to role selection</span>
                 </button>
 
-                {/* Role Badge */}
-                <div className="flex items-center gap-3 mb-6">
-                  {selectedRole && (
-                    <>
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${roles.find(r => r.id === selectedRole)?.gradient} flex items-center justify-center text-white shadow-lg`}>
-                        {(() => { const RoleIcon = roles.find(r => r.id === selectedRole)?.icon; return RoleIcon ? <RoleIcon size={24} /> : null; })()}
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold text-[var(--foreground)] capitalize">{selectedRole} Portal</h2>
-                        <p className="text-sm text-[var(--foreground-muted)]">Enter your credentials</p>
-                      </div>
-                    </>
-                  )}
+                {/* Header */}
+                <div className="text-center">
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${selectedRole === 'advertiser' ? 'from-indigo-500 to-indigo-600' : selectedRole === 'partner' ? 'from-purple-500 to-purple-600' : 'from-rose-500 to-rose-600'} flex items-center justify-center shadow-lg mx-auto mb-4`}>
+                    {selectedRole === 'advertiser' && <Building2 className="w-8 h-8 text-white" />}
+                    {selectedRole === 'partner' && <Users className="w-8 h-8 text-white" />}
+                    {selectedRole === 'admin' && <ShieldCheck className="w-8 h-8 text-white" />}
+                  </div>
+                  <h2 className="text-2xl font-bold text-[var(--foreground)]">Sign in as {selectedRole}</h2>
+                  <p className="text-[var(--foreground-muted)] mt-1">Enter your credentials</p>
                 </div>
 
-                {/* Login Form */}
-                <Card className="p-6">
-                  <CardContent className="space-y-4 p-0">
-                    <form onSubmit={handleLogin}>
+                {/* Form */}
+                <Card className="border-[var(--border)]">
+                  <CardContent className="p-6 space-y-4">
+                    <form onSubmit={handleLogin} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Email</label>
+                        <label className="text-sm font-medium text-[var(--foreground)]">Email</label>
                         <Input
                           type="email"
-                          placeholder="email@example.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="h-12"
-                          required
+                          placeholder="email@example.com"
+                          className="mt-1.5"
                         />
                       </div>
-
                       <div>
-                        <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Password</label>
+                        <label className="text-sm font-medium text-[var(--foreground)]">Password</label>
                         <Input
                           type="password"
-                          placeholder="Enter password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="h-12"
-                          required
+                          placeholder="Enter password"
+                          className="mt-1.5"
                         />
                       </div>
 
-                      {/* Error Message */}
                       {error && (
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                          <AlertCircle className="w-4 h-4" />
+                        <motion.p
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-sm text-[var(--danger)]"
+                        >
                           {error}
-                        </div>
+                        </motion.p>
                       )}
 
-                      <div className="flex items-center justify-between text-sm">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" className="w-4 h-4 rounded border-[var(--border)] bg-[var(--card)]" />
-                          <span className="text-[var(--foreground-muted)]">Remember me</span>
-                        </label>
-                        <Link href="/forgot-password" className="text-[#6366F1] hover:underline">Forgot password?</Link>
-                      </div>
-
-                      <Button type="submit" disabled={isLoading} className="w-full h-12 text-base font-semibold mt-4">
+                      <Button
+                        type="submit"
+                        className="w-full gap-2"
+                        disabled={isLoading}
+                      >
                         {isLoading ? (
-                          <span className="flex items-center gap-2">
-                            <Loader2 className="animate-spin h-5 w-5" />
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
                             Signing in...
-                          </span>
-                        ) : 'Sign In'}
+                          </>
+                        ) : (
+                          'Sign In'
+                        )}
                       </Button>
                     </form>
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-[var(--border)]" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-[var(--card)] px-2 text-[var(--foreground-muted)]">or</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={handleDemoLogin}
+                      disabled={isLoading}
+                    >
+                      Continue as {selectedRole} (Demo)
+                    </Button>
                   </CardContent>
                 </Card>
-
-                {/* Demo Mode Quick Access */}
-                <div className="mt-6 p-4 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-[#F59E0B]" />
-                    <p className="text-sm font-medium text-[#F59E0B]">Quick Demo Access</p>
-                  </div>
-                  <p className="text-sm text-[var(--foreground-muted)] mb-3">Click to login as {selectedRole} without password:</p>
-                  <Button onClick={handleDemoLogin} variant="outline" className="w-full h-10 text-sm border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#F59E0B]/10">
-                    Continue as {selectedRole} (Demo)
-                  </Button>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
