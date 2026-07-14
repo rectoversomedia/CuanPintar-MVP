@@ -53,8 +53,8 @@ interface WebhookLog {
   delivered_at: string;
 }
 
-// Available events
-export const WEBHOOK_EVENTS = [
+// Available events (defined inline to avoid export issues)
+const WEBHOOK_EVENTS = [
   { id: 'conversion.created', name: 'Conversion Created', description: 'When a new conversion is recorded' },
   { id: 'conversion.validated', name: 'Conversion Validated', description: 'When a conversion is approved or rejected' },
   { id: 'conversion.fraud', name: 'Fraud Detected', description: 'When a conversion is flagged as fraud' },
@@ -530,14 +530,4 @@ export async function DELETE(request: NextRequest) {
     success: deleted,
     message: deleted ? 'Webhook deleted' : 'Webhook not found',
   });
-}
-
-// Export for triggering webhooks from other parts of the app
-export async function triggerWebhook(event: string, data: unknown): Promise<void> {
-  const relevantWebhooks = Array.from(webhookStore.values())
-    .filter(w => w.active && w.events.includes(event));
-
-  await Promise.allSettled(
-    relevantWebhooks.map(webhook => deliverWebhook(webhook, event, data))
-  );
 }
