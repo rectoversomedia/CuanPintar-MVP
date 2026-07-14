@@ -11,30 +11,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-interface DailyStat {
-  date: string;
-  clicks: number;
-  conversions: number;
-}
-
-interface ClickData {
-  id: string;
-  timestamp: string;
-  country: string;
-  device: string;
-  browser: string;
-}
-
-// Demo mode data store
-const demoDailyStats = new Map<string, DailyStat[]>();
-const demoClicks = new Map<string, ClickData[]>();
-
-function getDemoData(linkId: string) {
-  const stats = demoDailyStats.get(linkId) || [];
-  const clicks = demoClicks.get(linkId) || [];
-  return { stats, clicks };
-}
-
 // GET /api/links/[id]/stats - Get overall statistics
 export async function GET(
   request: NextRequest,
@@ -150,28 +126,17 @@ export async function GET(
     const trend = {
       clicks_change:
         olderClicks > 0 ? ((recentClicks - olderClicks) / olderClicks) * 100 : 0,
-      conversions_change: 0, // Would need more complex calculation
+      conversions_change: 0,
       payout_change: 0,
     };
-
-    // Get device breakdown
-    const { data: deviceStats } = await supabase.rpc('get_link_device_breakdown', {
-      p_link_id: linkId,
-    });
-
-    // Get geo breakdown
-    const { data: geoStats } = await supabase.rpc('get_link_geo_breakdown', {
-      p_link_id: linkId,
-      p_limit: 10,
-    });
 
     return NextResponse.json({
       success: true,
       data: {
         overview,
         trend,
-        top_devices: deviceStats || [],
-        top_countries: geoStats || [],
+        top_devices: [],
+        top_countries: [],
         daily_stats: dailyStats || [],
       },
     });
@@ -183,6 +148,3 @@ export async function GET(
     );
   }
 }
-
-// Export individual stats handlers for route segmentation
-export { getDemoData };
